@@ -56,8 +56,8 @@ set_target_properties(OgSkyx PROPERTIES
 IF(UNIX AND NOT APPLE)
     add_custom_command( TARGET OgSkyx PRE_BUILD
         COMMAND mkdir -p ../../RunPath/Plugins )
-    add_custom_command( TARGET OgSkyx POST_BUILD
-        COMMAND cp -r ../lib/libOgSkyx.* ../../RunPath/Plugins/ )
+#     add_custom_command( TARGET OgSkyx POST_BUILD
+#         COMMAND cp -r ../lib/libOgSkyx.* ../../RunPath/Plugins/ )
 ENDIF(UNIX AND NOT APPLE)
 
 IF(WIN32)

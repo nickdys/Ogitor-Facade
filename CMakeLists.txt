@@ -67,6 +67,12 @@ SET(CMAKE_DEBUG_POSTFIX "_d")
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/;${CMAKE_MODULE_PATH}")
 
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "-fpermissive")
+else() # GCC/Mingw
+    set(CMAKE_CXX_FLAGS "-fpermissive -lpthread")
+endif()
+
 #IF(UNIX)
 #   SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 #   SET(CMAKE_INSTALL_RPATH ../lib ../Plugins)

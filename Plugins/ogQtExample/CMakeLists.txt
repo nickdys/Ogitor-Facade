@@ -65,8 +65,8 @@ else(NOT QT4_FOUND)
 	if(UNIX AND NOT APPLE)
 		add_custom_command(TARGET ogQtExample PRE_BUILD
 			COMMAND mkdir -p ../../RunPath/Plugins)
-		add_custom_command(TARGET ogQtExample POST_BUILD
-			COMMAND cp -r ../lib/ogQtExample.* ../../RunPath/Plugins/)
+# 		add_custom_command(TARGET ogQtExample POST_BUILD
+# 			COMMAND cp -r ../lib/ogQtExample.* ../../RunPath/Plugins/)
 	endif(UNIX AND NOT APPLE)
 
 	if(WIN32)

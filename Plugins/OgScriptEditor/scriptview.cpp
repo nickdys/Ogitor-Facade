@@ -158,7 +158,9 @@ ScriptViewWidget::ScriptViewWidget(QWidget *parent) : QWidget(parent)
         generalCategory->addChild(scriptitem);
     }
 
-    Ogitors::EventManager::getSingletonPtr()->connectEvent(EventManager::LOAD_STATE_CHANGE, this, true, 0, true, 0, EVENT_CALLBACK(ScriptViewWidget, onSceneLoadStateChange));
+    std::cout << "singleton:" << Ogitors::EventManager::getSingletonPtr() << std::endl;
+    std::cout << "singleton:" << Ogitors::EventManager::getSingletonPtr() << std::endl;
+//     Ogitors::EventManager::getSingletonPtr()->connectEvent(EventManager::LOAD_STATE_CHANGE, this, true, 0, true, 0, EVENT_CALLBACK(ScriptViewWidget, onSceneLoadStateChange));
 }
 //----------------------------------------------------------------------------------------
 ScriptViewWidget::~ScriptViewWidget()

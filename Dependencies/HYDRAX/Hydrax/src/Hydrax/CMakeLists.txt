@@ -71,7 +71,7 @@ include_directories (.)
 add_library(Hydrax SHARED ${HEADER_FILES} ${SOURCE_FILES}  )
 SET(LIBRARY_OUTPUT_PATH  ../../../../lib)
 
-set_target_properties(PROPERTIES
+set_target_properties(PROPERTIES DEBUG_POSTFIX ""
         INSTALL_RPATH ${OGRE_INSTALL_DIR}/lib/OGRE  )
 
 set_target_properties(Hydrax PROPERTIES VERSION ${HYDRAX_VERSION} SOVERSION ${HYDRAX_VERSION_MAJOR})

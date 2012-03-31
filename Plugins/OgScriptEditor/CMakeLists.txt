@@ -76,8 +76,8 @@ else(NOT QT4_FOUND)
 	IF(UNIX AND NOT APPLE)
 		add_custom_command(TARGET OgScriptEditor PRE_BUILD
 			COMMAND mkdir -p ../../RunPath/Plugins)
-		add_custom_command(TARGET OgScriptEditor POST_BUILD
-			COMMAND cp -r ../lib/libOgScriptEditor.* ../../RunPath/Plugins/)
+# 		add_custom_command(TARGET OgScriptEditor POST_BUILD
+# 			COMMAND cp -r ../lib/libOgScriptEditor.* ../../RunPath/Plugins/)
 	ENDIF(UNIX AND NOT APPLE)
 
 	if(WIN32)

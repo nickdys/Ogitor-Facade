@@ -54,7 +54,7 @@ ENDIF(UNIX)
 add_library(PagedGeometry ${HEADER_FILES} ${SOURCE_FILES}  )
 SET(LIBRARY_OUTPUT_PATH  ../lib)
 
-set_target_properties(PROPERTIES
+set_target_properties(PROPERTIES DEBUG_POSTFIX ""
         INSTALL_RPATH ${OGRE_INSTALL_DIR}/lib/OGRE  )
 
 set_target_properties(PagedGeometry PROPERTIES VERSION ${PG_VERSION} SOVERSION ${PG_VERSION_MAJOR})

@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
 
     readRecentFiles(settings);
 
-    mOgitorMainWindow = new MainWindow();
+    mOgitorMainWindow = new ::MainWindow();
     mOgitorMainWindow->show();
     
     mOgitorMainWindow->setApplicationObject(&a);

@@ -75,7 +75,7 @@ else(NOT QT4_FOUND)
 	add_library(OgModularZone SHARED ${SRCS})
 	set(LIBRARY_OUTPUT_PATH ../lib)
 
-	set_target_properties(OgModularZone PROPERTIES INSTALL_RPATH ${OGRE_INSTALL_DIR}/lib/OGRE)
+	set_target_properties(OgModularZone PROPERTIES DEBUG_POSTFIX "" INSTALL_RPATH ${OGRE_INSTALL_DIR}/lib/OGRE)
 	set_target_properties(OgModularZone PROPERTIES VERSION ${OgModularZone_VERSION} SOVERSION ${OgModularZone_VERSION_MAJOR})
 	set_target_properties(OgModularZone PROPERTIES COMPILE_DEFINITIONS PLUGIN_EXPORT)
 	set_target_properties(OgModularZone PROPERTIES SOLUTION_FOLDER Plugins) 
@@ -83,8 +83,8 @@ else(NOT QT4_FOUND)
 	if(UNIX AND NOT APPLE)
 		add_custom_command(TARGET OgModularZone PRE_BUILD
 			COMMAND mkdir -p ../../RunPath/Plugins)
-		add_custom_command(TARGET OgModularZone POST_BUILD
-			COMMAND cp -r ../lib/libOgModularZone.* ../../RunPath/Plugins/)
+# 		add_custom_command(TARGET OgModularZone POST_BUILD
+# 			COMMAND cp -r ../lib/libOgModularZone.* ../../RunPath/Plugins/)
 	endif(UNIX AND NOT APPLE)
 
 	if(WIN32)

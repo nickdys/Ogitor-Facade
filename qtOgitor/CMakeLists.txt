@@ -167,7 +167,7 @@ ELSE(NOT QT4_FOUND)
             ${RESOURCE_SRCS} 
             ${qtOgitor_res} 
 	    )
-    add_dependencies(qtOgitor OgCaelum)
+#     add_dependencies(qtOgitor OgCaelum)
     add_dependencies(qtOgitor OgHydrax)
     add_dependencies(qtOgitor OgSkyx)
     add_dependencies(qtOgitor OgModularZone)
@@ -180,7 +180,7 @@ ELSE(NOT QT4_FOUND)
     ADD_CUSTOM_COMMAND(TARGET qtOgitor POST_BUILD COMMAND ${MakeBundle})
     endif(NOT APPLE)
   
-    SET_TARGET_PROPERTIES( qtOgitor PROPERTIES DEBUG_POSTFIX _d )
+    SET_TARGET_PROPERTIES( qtOgitor PROPERTIES DEBUG_POSTFIX "")
 
     if(OGITOR_EXPERIMENTAL_INTERFACE)
         TARGET_LINK_LIBRARIES(qtOgitor QtSolutions_PropertyBrowser ${QT_QTMAIN_LIBRARY} ${QT_LIBRARIES} ${OGRE_LIBRARIES} ${OGRE_Paging_LIBRARY} ${OGRE_Terrain_LIBRARY} Ogitor meshmagick_shared_lib ${Boost_REGEX_LIBRARY})

@@ -243,6 +243,7 @@ public:
     void _addScriptAction(const QString& iconpath, const QString& scriptpath);
     void _removeScriptAction(QAction *action);
     void _editScriptAction(QAction *action);
+    
 
 public Q_SLOTS:
     void onAddScriptAction();
@@ -350,7 +351,7 @@ private:
     void setupStatusBar();
     void updateActions();
     void setupLog();
-    void messageLogged (const Ogre::String &message, Ogre::LogMessageLevel lml, bool maskDebug, const Ogre::String &logName);
+    void messageLogged (const Ogre::String &message, Ogre::LogMessageLevel lml, bool maskDebug, const Ogre::String &logName, bool& skipThisMessage);
     void onSceneRunStateChange(Ogitors::IEvent* evt);
     
     void onSceneEditorToolChange(Ogitors::IEvent* evt);

@@ -45,7 +45,7 @@ SET(LIBRARY_OUTPUT_PATH ../lib)
 set_target_properties(DotSceneSerializer PROPERTIES
         INSTALL_RPATH ${OGRE_INSTALL_DIR}/lib/OGRE  )
 
-set_target_properties(DotSceneSerializer PROPERTIES VERSION ${DotSceneSerializer_VERSION} SOVERSION ${DotSceneSerializer_VERSION_MAJOR})
+set_target_properties(DotSceneSerializer PROPERTIES DEBUG_POSTFIX "" VERSION ${DotSceneSerializer_VERSION} SOVERSION ${DotSceneSerializer_VERSION_MAJOR})
 
 set_target_properties(DotSceneSerializer PROPERTIES
 COMPILE_DEFINITIONS PLUGIN_EXPORT

@@ -39,7 +39,7 @@ set_target_properties(OgCaelum PROPERTIES
 set_target_properties(OgCaelum PROPERTIES 
     SOLUTION_FOLDER Plugins) 
 
-set_target_properties(OgCaelum PROPERTIES VERSION ${OgCaelum_VERSION} SOVERSION ${OgCaelum_VERSION_MAJOR})
+set_target_properties(OgCaelum PROPERTIES DEBUG_POSTFIX "" VERSION ${OgCaelum_VERSION} SOVERSION ${OgCaelum_VERSION_MAJOR})
 
 set_target_properties(OgCaelum PROPERTIES
 COMPILE_DEFINITIONS PLUGIN_EXPORT

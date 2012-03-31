@@ -44,7 +44,7 @@ SET(LIBRARY_OUTPUT_PATH ../lib)
 set_target_properties(OgHydrax PROPERTIES
         INSTALL_RPATH ${OGRE_INSTALL_DIR}/lib/OGRE  )
 
-set_target_properties(OgHydrax PROPERTIES VERSION ${OgHydrax_VERSION} SOVERSION ${OgHydrax_VERSION_MAJOR})
+set_target_properties(OgHydrax PROPERTIES DEBUG_POSTFIX "" VERSION ${OgHydrax_VERSION} SOVERSION ${OgHydrax_VERSION_MAJOR})
 
 set_target_properties(OgHydrax PROPERTIES
 COMPILE_DEFINITIONS PLUGIN_EXPORT

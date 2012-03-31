@@ -83,7 +83,7 @@ link_libraries(Caelum  ${OGRE_LIBRARIES} ${Boost_LIBRARIES})
 add_library(Caelum SHARED ${HEADER_FILES} ${SOURCE_FILES}  )
 SET(LIBRARY_OUTPUT_PATH  ../../lib)
 
-set_target_properties(Caelum PROPERTIES
+set_target_properties(Caelum PROPERTIES DEBUG_POSTFIX ""
         INSTALL_RPATH ${OGRE_INSTALL_DIR}/lib/OGRE  )
 
 set_target_properties(Caelum PROPERTIES VERSION ${Caelum_VERSION} SOVERSION ${Caelum_VERSION_MAJOR})

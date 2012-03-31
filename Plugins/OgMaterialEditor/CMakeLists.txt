@@ -76,15 +76,15 @@ else(NOT QT4_FOUND)
 	set(LIBRARY_OUTPUT_PATH ../lib)
 
 #	set_target_properties(OgMaterialEditor PROPERTIES	INSTALL_RPATH ${OGRE_INSTALL_DIR}/lib/OGRE)
-	set_target_properties(OgMaterialEditor PROPERTIES VERSION ${OgMaterialEditor_VERSION} SOVERSION ${OgMaterialEditor_VERSION_MAJOR})
+	set_target_properties(OgMaterialEditor PROPERTIES DEBUG_POSTFIX "" VERSION ${OgMaterialEditor_VERSION} SOVERSION ${OgMaterialEditor_VERSION_MAJOR})
 	set_target_properties(OgMaterialEditor PROPERTIES	COMPILE_DEFINITIONS PLUGIN_EXPORT)
 	set_target_properties(OgMaterialEditor PROPERTIES SOLUTION_FOLDER Plugins)
 
 	if(UNIX AND NOT APPLE)
 		add_custom_command(TARGET OgMaterialEditor PRE_BUILD
 			COMMAND mkdir -p ../../RunPath/Plugins)
-		add_custom_command(TARGET OgMaterialEditor POST_BUILD
-			COMMAND cp -r ../lib/libOgMaterialEditor.* ../../RunPath/Plugins/)
+# 		add_custom_command(TARGET OgMaterialEditor POST_BUILD
+# 			COMMAND cp -r ../lib/libOgMaterialEditor.* ../../RunPath/Plugins/)
 	endif(UNIX AND NOT APPLE)
 
 	if(WIN32)
