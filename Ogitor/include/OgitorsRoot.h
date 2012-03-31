@@ -62,7 +62,7 @@ namespace Ogitors
         Ogre::String  mCaption;
         void         *mHandle;
     };
-
+    
     /// A Hashed by Name Storage Definition for All Serializers
     typedef OgitorExport HashMap<Ogre::String,CBaseSerializer*> SerializerMap;
 
@@ -676,6 +676,27 @@ namespace Ogitors
         */
         void                             SetCameraVisiblity(bool visibility);
         /**
+        * Fetches ortho mode state
+        * @return true if camera(s) is visible, otherwise false
+        */
+        inline bool                         GetOrthographic() {return mOrthographicMode;};
+        /**
+        * Sets orthographic perspective
+        */
+        void                                SetOrthographicCamera();
+        /**
+        * Sets orthographic perspective
+        */
+        void                                SetNormalCamera();
+        /**
+         * Modify the GUI for orthographic view,
+         */
+        void                                SetGuiForOrthographic();
+        /**
+         * Modify the GUI for normal view,
+         */
+        void                                SetGuiForNormalPerspective();
+        /**
         * Fetches multi-selection editor handle
         * @return multi-selection editor handle
         */
@@ -1016,6 +1037,8 @@ namespace Ogitors
         bool                mIsSceneModified;                           /** Flag signifying if scene was modified since last save */
         bool                mGlobalLightVisiblity;                      /** Flag determining light helper visibility */
         bool                mGlobalCameraVisiblity;                     /** Flag determining camera helper visibility */
+        bool                mOrthographicMode;                          /** Flag signifying if editor is in ortho mode */
+//         CameraProperties    mLastCameraProperties;   
         Selection2D        *mSelRect;                                   /** Selection rectangle (used for volume object selection) */
         Ogre::SceneNode    *mSelectionNode;                             /** Scene node to hold selection rectangle */
         MouseListener      *mMouseListener;                             /** Mouse listener handle (used to receive and redirect mouse events) */

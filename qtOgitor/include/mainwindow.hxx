@@ -201,6 +201,7 @@ public:
     QSlider*  mCameraSpeedSlider;
     QSlider*  mFPSSlider;
     QLabel*   mFPSSliderLabel;
+    QCheckBox* mOrthoModeCheckBox;
 #if OGRE_MEMORY_TRACKER
     QLabel*   mMemoryUsageLabel;
 #endif
@@ -290,6 +291,7 @@ public Q_SLOTS:
     void cameraSpeedValueChanged ( int value );
     void fpsValueChanged ( int value );
     void setCameraPolyMode(int value);
+    void setPerspective(bool orthographic);
     void selectActionTriggered(int value);
     void cameraAction(int id);
     void toggleLogMessages();

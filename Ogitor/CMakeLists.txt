@@ -7,6 +7,7 @@ set(Ogitor_hdrs
   ./include/BaseSerializer.h
   ./include/BillboardSetEditor.h
   ./include/CameraEditor.h
+  ./include/OrthographicCameraEditor.h
   ./include/CameraVisualHelper.h
   ./include/DefaultEvents.h
   ./include/EntityEditor.h
@@ -63,6 +64,7 @@ set(Ogitor_srcs
   ./src/BaseEditor.cpp
   ./src/BillboardSetEditor.cpp
   ./src/CameraEditor.cpp
+  ./src/OrthographicCameraEditor.cpp 
   ./src/CameraVisualHelper.cpp
   ./src/DefaultEvents.cpp
   ./src/EntityEditor.cpp

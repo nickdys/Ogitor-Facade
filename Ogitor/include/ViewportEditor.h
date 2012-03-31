@@ -34,6 +34,7 @@
 
 // Includes
 #include "ViewGrid.h"
+#include "OrthographicCameraEditor.h"
 
 namespace Ogitors
 {
@@ -137,6 +138,8 @@ namespace Ogitors
         virtual TiXmlElement* exportDotScene(TiXmlElement *pParent);
 
         virtual void OnObjectDestroyed(CBaseEditor *object);
+        void SetOrthographicCamera();
+        void SetPreviousCamera();
     protected:
         Ogre::Viewport                      *mHandle;               /** Viewport handle */       
 
@@ -158,6 +161,8 @@ namespace Ogitors
 
         std::vector<COMPOSITORPUSH>  mCompositorStorage;            /** Compositor(s) storage list */
         CCameraEditor               *mActiveCamera;                 /** Active camera handle */
+        CCameraEditor               *mPreviousCamera;             /** Last active camera */
+        COrthographicCameraEditor   *mOrthographicCamera;           /** The only orthographic camera */
         CCameraEditor               *mViewCamera;                   /** View camera handle */
 
         /**
@@ -374,6 +379,7 @@ namespace Ogitors
         static bool                mIsSettingPos;           /** Change to movement tool flag */
         static OgitorsUndoManager *mUndoManager;            /** Undo manager handle */
         static float               mSnapMultiplier;         /** Binding (snap) multiplier amount */
+        static bool                mOrthographic;           /** Wheter the camera is setted to ortographic perspective */
 
     public:
         static bool               *mViewKeyboard;           /** Viewport uses keyboard? flag */

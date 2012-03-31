@@ -69,7 +69,7 @@ namespace Ogitors
         inline void setClipDistance(const Ogre::Vector2& value) { mClipDistance->set(value); }
         inline void setFOV(Ogre::Real value) { mFOV->set(value); }
         inline void setPolygonMode(int value) { mPolygonMode->set(value); }
-        inline void setViewMode(int value) { mViewMode->set(value); }
+        inline virtual void setViewMode(int value) { mViewMode->set(value); }
 
         inline Ogre::Vector3    getPosition() { return mPosition->get(); }
         inline Ogre::Quaternion getOrientation() { return mOrientation->get(); }
