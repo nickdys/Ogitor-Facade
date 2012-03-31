@@ -43,7 +43,15 @@ distribution.
 #define DEBUG
 #endif
 
-#include "OgitorsExports.h"
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+   #ifdef OGITOR_EXPORT
+     #define OgitorExport __declspec (dllexport)
+   #else
+     #define OgitorExport __declspec (dllimport)
+   #endif
+#else
+   #define OgitorExport
+#endif
 
 #ifdef TIXML_USE_STL
     #include <string>
@@ -1421,7 +1429,6 @@ public:
         file location. Streaming may be added in the future.
     */
     bool LoadFile( FILE*, TiXmlEncoding encoding = TIXML_DEFAULT_ENCODING );
-    bool LoadFromMemory( char * buffer, long length );
     /// Save a file using the given FILE*. Returns true if successful.
     bool SaveFile( FILE* ) const;
 

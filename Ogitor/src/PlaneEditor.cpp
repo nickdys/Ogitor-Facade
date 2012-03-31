@@ -66,7 +66,7 @@ Ogre::Entity *CPlaneEditor::_createPlane()
 
     Ogre::Plane plane(mNormal->get(), mDistance->get());
     
-    mesh = Ogre::MeshManager::getSingletonPtr()->createPlane(mName->get(),PROJECT_RESOURCE_GROUP,plane,mWidth->get(),mHeight->get(),mxSegments->get(),mySegments->get(),mHasNormals->get(),mNumCoordSets->get(),muTile->get(),mvTile->get(),Ogre::Vector3::UNIT_Z);
+    mesh = Ogre::MeshManager::getSingletonPtr()->createPlane(mName->get(),"ProjectResources",plane,mWidth->get(),mHeight->get(),mxSegments->get(),mySegments->get(),mHasNormals->get(),mNumCoordSets->get(),muTile->get(),mvTile->get(),Ogre::Vector3::UNIT_Z);
     mPlaneHandle = mOgitorsRoot->GetSceneManager()->createEntity(mName->get(), mName->get());
     mPlaneHandle->setQueryFlags(QUERYFLAG_MOVABLE);
 

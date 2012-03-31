@@ -16,22 +16,22 @@
 //Place - Suite 330, Boston, MA 02111-1307, USA, or go to
 //http://www.gnu.org/copyleft/lesser.txt.
 ////////////////////////////////////////////////////////////////////////////////*/
-
-#ifndef PORTAL_OUTLINE_RENDERABLE_H
-#define PORTAL_OUTLINE_RENDERABLE_H
-
+#pragma once
 #include "OgreSimpleRenderable.h"
 #include "OgreTechnique.h"
 
 class PortalOutlineRenderable : public Ogre::SimpleRenderable
 {
 public:
-    enum PortalState
-    {
-        PS_FREE,
-        PS_CONNECTED,
-        PS_LINKED
-    };
+	enum PortalState
+	{
+		PS_FREE,
+		PS_CONNECTED,
+		PS_LINKED
+
+
+	};
+
 
     /**
     * Constructor
@@ -55,19 +55,19 @@ public:
     */
     Ogre::Real getBoundingRadius()const;
 
-    /**
+	/**
     * Fetches squared view depth
     * @param camera handle to current camera
     * @return squared view depth
     */    
-    Ogre::Real getSquaredViewDepth(const Ogre::Camera* cam)const ;
-    
-    void setPortalState(PortalState state);
+	Ogre::Real getSquaredViewDepth(const Ogre::Camera* cam)const ;
+	
+	void setPortalState(PortalState state);
 
 protected:
-    virtual void createPortalMaterials(void);
+	virtual void createPortalMaterials(void);
 
     Ogre::VertexData vertexes;  /** portal outline's vertices */
-};
 
-#endif
+
+};

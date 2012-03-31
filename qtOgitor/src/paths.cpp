@@ -36,44 +36,36 @@
 #include <Carbon/Carbon.h>
 #endif
 
-#if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
-#include <QtCore/QSettings>
-#include <QtCore/QString>
-#endif
-
-std::string bundlePath()
+std::string bundlePath() 
 {
 #if OGRE_PLATFORM == OGRE_PLATFORM_APPLE
-
+    
     char path[1024];
     CFBundleRef mainBundle = CFBundleGetMainBundle();
     assert( mainBundle );
-
+    
     CFURLRef mainBundleURL = CFBundleCopyBundleURL( mainBundle);
     assert( mainBundleURL);
-
+    
     CFStringRef cfStringRef = CFURLCopyFileSystemPath( mainBundleURL, kCFURLPOSIXPathStyle);
     assert( cfStringRef);
-
+    
     CFStringGetCString( cfStringRef, path, 1024, kCFStringEncodingASCII);
-
+    
     CFRelease( mainBundleURL);
     CFRelease( cfStringRef);
-
+    
     return std::string( path);
-
+    
 #else
     return "" ;
 #endif
 }
 
-std::string resourcePath()
+std::string resourcePath() 
 {
 #if OGRE_PLATFORM == OGRE_PLATFORM_APPLE
     return bundlePath() + "/Contents/Resources/" ;
-#endif
-#if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
-    return std::string("/usr/share/qtOgitor/");
 #else
     return bundlePath() ;
 #endif

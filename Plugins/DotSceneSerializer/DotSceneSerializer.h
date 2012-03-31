@@ -30,8 +30,7 @@
 /// THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef DOTSCENE_SERIALIZER_H
-#define DOTSCENE_SERIALIZER_H
+#pragma once
 
 #include "Ogitors.h"
 
@@ -48,36 +47,33 @@
 namespace Ogitors
 {
 
-    class PluginExport CDotSceneSerializer: public CBaseSerializer
-    {
-    public:
-        CDotSceneSerializer();
-        virtual ~CDotSceneSerializer() {};
+class PluginExport CDotSceneSerializer: public CBaseSerializer
+{
+public:
+    CDotSceneSerializer();
+    virtual ~CDotSceneSerializer() {};
 
-        /// Does the serializer need a TerminateScene before Import?
-        virtual bool RequiresTerminateScene() {return true;};
-        /// The function to Export Data
-        virtual int  Export(bool SaveAs = false, Ogre::String exportfile = "");
-        /// The function to Import Data
-        virtual int  Import(Ogre::String importfile = "");
-    protected:
-        int RecurseReadObjects(TiXmlElement *parentelement,CBaseEditor* parentobject);
+    /// Does the serializer need a TerminateScene before Import?
+    virtual bool RequiresTerminateScene() {return true;};
+    /// The function to Export Data
+    virtual int  Export(bool SaveAs = false);
+    /// The function to Import Data
+    virtual int  Import(Ogre::String importfile = "");
+protected:
+    int RecurseReadObjects(TiXmlElement *parentelement,CBaseEditor* parentobject);
 
-        int ReadSceneNode(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
-        int ReadEntity(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
-        int ReadSubEntity(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
-        int ReadLight(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
-        int ReadCamera(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
-        int ReadParticle(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
-        int ReadPlane(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
-    };
+    int ReadSceneNode(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
+    int ReadEntity(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
+    int ReadSubEntity(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
+    int ReadLight(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
+    int ReadCamera(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
+    int ReadParticle(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
+    int ReadPlane(TiXmlElement *element, CBaseEditor *parent, CBaseEditor **ret);
+};
 
 }
 
 extern "C" bool PluginExport dllStartPlugin(void *identifier, Ogre::String& name);
 
-extern "C" bool PluginExport dllGetPluginName(Ogre::String& name);
-
 extern "C" bool PluginExport dllStopPlugin(void);
 
-#endif

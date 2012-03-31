@@ -110,7 +110,7 @@ void CTerrainGroupEditor::importFullTerrainFromHeightMap()
         int vertexNum = ftell(f) / 4;
         fseek(f, 0, SEEK_SET);
         data = OGRE_ALLOC_T(float, vertexNum, Ogre::MEMCATEGORY_GEOMETRY);
-        size_t byte_read = fread(data,sizeof(float),vertexNum,f);
+        fread(data,sizeof(float),vertexNum,f);
         fclose(f);
         imgW = imgH = sqrt((float)vertexNum);
     }
@@ -215,23 +215,6 @@ void CTerrainGroupEditor::exportHeightMaps()
     {
         CTerrainPageEditor *ed = static_cast<CTerrainPageEditor*>(it->second);
         ed->exportHeightMap(directory);
-        it++;
-    }
-}
-//-----------------------------------------------------------------------------------------
-void CTerrainGroupEditor::exportCompositeMaps()
-{
-    Ogre::String directory = mSystem->DisplayDirectorySelector(OTR("Select a Directory to Export"));
-
-    if(directory.empty())
-        return;
-
-    NameObjectPairList::iterator it = mChildren.begin();
-
-    while(it != mChildren.end())
-    {
-        CTerrainPageEditor *ed = static_cast<CTerrainPageEditor*>(it->second);
-        ed->exportCompositeMap(directory);
         it++;
     }
 }

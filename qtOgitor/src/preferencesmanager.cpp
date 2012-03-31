@@ -50,16 +50,17 @@ PreferencesManager::PreferencesManager(QWidget *parent) : QObject(parent)
     mCurrentSection = 0;
     mSectionCount = 0;
 
-    mOgitorPrefWidget = new OgitorPreferencesWidget("preferences", parent);
-    mOgitorPrefWidget->getPreferencesWidget();
-    addCoreSection(tr("Ogitor"), ":/icons/qtOgitor.png", "preferences", mOgitorPrefWidget);
+    mOgitorPrefWidget = new OgitorPreferencesWidget(parent);
+    Ogre::NameValuePairList preferences;
+    mOgitorPrefWidget->getPreferencesWidget(preferences);
+    addCoreSection(tr("Ogitor"), ":/icons/qtOgitor.png", mOgitorPrefWidget);
 
     //mShortCutSettings = new ShortCutSettings(parent);
     //addCoreSection(tr("Controls"), ":/icons/controls.svg", mShortCutSettings);
 
-    mPluginsRootItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(tr("Plugins")));
-    mPluginsRootItem->setIcon(0, QIcon(":/icons/additional.svg"));
-    mTreeWidgetRoot->addChild(mPluginsRootItem);
+    //mPluginsRootItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(tr("Plugins")));
+    //mPluginsRootItem->setIcon(0, QIcon(":/icons/additional.svg"));
+    //mTreeWidgetRoot->addChild(mPluginsRootItem);
 
     setupSections();
 
@@ -81,17 +82,21 @@ PreferencesManager::~PreferencesManager()
     mPreferencesSections.clear();
 }
 //--------------------------------------------------------------------------------
-void PreferencesManager::addCoreSection(QString identifier, QString sectionImagePath, QString sectionName, QWidget *widget)
+void PreferencesManager::addCoreSection(QString identifier, QString sectionImagePath, QWidget *widget)
 {
+//     if(mButtonsLayout->findChild<QToolButton *>(identifier + "_button")) // already exists
+//         return;
+    
     QTreeWidgetItem *item = new QTreeWidgetItem((QTreeWidget*)0, QStringList(identifier));
     item->setIcon(0, QIcon(sectionImagePath));
     item->setWhatsThis(0, QString::number((qlonglong)widget));
     mTreeWidgetRoot->addChild(item);
+    
     connect(widget, SIGNAL(isDirty()), this, SLOT(onIsDirty()));
-  
+
+
     PreferencesSection *sec = new PreferencesSection();
     sec->identifier = identifier;
-    sec->sectionName = sectionName;
     sec->widget = widget;
     sec->treeItem = item;
     
@@ -102,8 +107,10 @@ void PreferencesManager::addCoreSection(QString identifier, QString sectionImage
     mSectionCount++;
 }
 //--------------------------------------------------------------------------------
-void PreferencesManager::addPluginSection(QString identifier, QString sectionImagePath, QString sectionName, QWidget *widget)
+void PreferencesManager::addSection(QString identifier, QString sectionImagePath, QWidget *widget)
 {
+//     if(mButtonsLayout->findChild<QToolButton *>(identifier + "_button")) // already exists
+//         return;
     QTreeWidgetItem *item = new QTreeWidgetItem((QTreeWidget*)0, QStringList(identifier));
     item->setIcon(0, QIcon(sectionImagePath));
     item->setWhatsThis(0, QString::number((qlonglong)widget));
@@ -112,7 +119,6 @@ void PreferencesManager::addPluginSection(QString identifier, QString sectionIma
 
     PreferencesSection *sec = new PreferencesSection();
     sec->identifier = identifier;
-    sec->sectionName = sectionName;
     sec->widget = widget;
     sec->treeItem = item;
         
@@ -130,8 +136,8 @@ void PreferencesManager::createPreferencesDialog(QWidget *parent)
     mTreeWidget->setColumnCount(1);
     mTreeWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     mTreeWidget->setSelectionBehavior(QAbstractItemView::SelectItems);
-    mTreeWidget->setMinimumWidth(210);
-    mTreeWidget->setMaximumWidth(210);
+    mTreeWidget->setMinimumWidth(160);
+    mTreeWidget->setMaximumWidth(160);
 
     mTreeWidgetRoot = new QTreeWidgetItem((QTreeWidget*)0, QStringList(tr("Preferences")));
     mTreeWidgetRoot->setIcon(0, QIcon(":/icons/preferences.svg"));
@@ -168,22 +174,31 @@ void PreferencesManager::createPreferencesDialog(QWidget *parent)
     applybutton->setEnabled(false);
     
     mPrefDlg->setLayout(mMainLayout);
-    mPrefDlg->setMinimumSize(710, 350);
+    mPrefDlg->setMinimumSize(680, 350);
+
 }
 //--------------------------------------------------------------------------------
 void PreferencesManager::setupSections()
 {
-    mPreferencesEditors = Ogitors::OgitorsRoot::getSingletonPtr()->GetPreferencesEditorList();
+    mPreferencesEditors = Ogitors::OgitorsRoot::getSingleton().GetPreferenceEditorList();
 
     QSettings settings;
 
-    Ogitors::PreferencesEditorDataList::iterator iter;
+    Ogitors::PreferenceEditorVector::iterator iter;
     for(iter=mPreferencesEditors.begin(); iter!=mPreferencesEditors.end(); iter++)
     {
-        Ogitors::PreferencesEditorData str = (Ogitors::PreferencesEditorData)(*iter);
-        QWidget *widg = (QWidget*)static_cast<Ogitors::PreferencesEditor*>(str.mHandle)->getPreferencesWidget();
-        widg->setObjectName(str.mCaption.c_str());
-        addPluginSection(QString(str.mCaption.c_str()), QString(str.mIcon.c_str()), QString(str.mSectionName.c_str()), widg);
+        Ogitors::PreferenceEditorRegistrationStruct str = (Ogitors::PreferenceEditorRegistrationStruct)(*iter);
+        QWidget *widg = (QWidget*)str.PrefEditor->getPreferencesWidget();
+        settings.beginGroup(QString(str.Identifier.c_str()));
+        QStringList keys = settings.allKeys();
+        while (!keys.isEmpty())
+        {
+            QString key = keys.takeFirst();
+            std::cout << "Key: " << key.toStdString() << std::endl;
+            std::cout << "Value: " << settings.value(key).toString().toStdString() << std::endl;
+        }
+        addSection(QString(str.Identifier.c_str()), QString(str.ImagePath.c_str()), widg);
+        settings.endGroup();
     }
 }
 //--------------------------------------------------------------------------------
@@ -201,6 +216,7 @@ void PreferencesManager::showSection(QString identifier)
         mCurrentSection = mPreferencesSections[identifier];
         mContentsLayout->addWidget(mCurrentSection->widget);
         mCurrentSection->widget->show();
+
     }
 }
 //--------------------------------------------------------------------------------
@@ -210,15 +226,14 @@ void PreferencesManager::onApply()
 
     result &= mOgitorPrefWidget->applyPreferences();
 
-    Ogitors::PreferencesEditorDataList::iterator iter;
-    for(iter = mPreferencesEditors.begin(); iter != mPreferencesEditors.end(); iter++)
+    Ogitors::PreferenceEditorVector::iterator iter;
+    for(iter=mPreferencesEditors.begin(); iter!=mPreferencesEditors.end(); iter++)
     {
-        Ogitors::PreferencesEditorData str = (Ogitors::PreferencesEditorData)(*iter);
-        result &= static_cast<Ogitors::PreferencesEditor*>(str.mHandle)->applyPreferences();
+        Ogitors::PreferenceEditorRegistrationStruct str = (Ogitors::PreferenceEditorRegistrationStruct)(*iter);
+        result &= str.PrefEditor->applyPreferences();
     }
 
-    // If we reach this line it is safe to disable the button
-    mBtnBox->button(QDialogButtonBox::Apply)->setEnabled(!result); 
+    mBtnBox->button(QDialogButtonBox::Apply)->setEnabled(!result); // if we reach here its safe to disable the button
 }
 //--------------------------------------------------------------------------------
 void PreferencesManager::onAccept()
@@ -256,28 +271,31 @@ void PreferencesManager::savePreferences()
     mOgitorPrefWidget->getPreferences(preferences);
 
     QSettings settings;
-    settings.beginGroup(mPreferencesSections[tr("Ogitor")]->sectionName);
+    settings.beginGroup("preferences");
     Ogre::NameValuePairList::const_iterator na;
     for(na=preferences.begin(); na!=preferences.end(); na++)
         settings.setValue(na->first.c_str(), na->second.c_str());
     settings.endGroup();
 
     ///////////// Plugin Widgets ///////////////////////////
-    Ogitors::PreferencesEditorDataList::iterator iter;
+    Ogitors::PreferenceEditorVector::iterator iter;
     for(iter=mPreferencesEditors.begin(); iter!=mPreferencesEditors.end(); iter++)
     {
         Ogre::NameValuePairList preferences;
-        Ogitors::PreferencesEditorData str = (Ogitors::PreferencesEditorData)(*iter);
-        static_cast<Ogitors::PreferencesEditor*>(str.mHandle)->getPreferences(preferences);
+        Ogitors::PreferenceEditorRegistrationStruct str = (Ogitors::PreferenceEditorRegistrationStruct)(*iter);
+        str.PrefEditor->getPreferences(preferences);
 
         Ogre::NameValuePairList::const_iterator ni;
 
-        settings.beginGroup(str.mSectionName.c_str());
+        settings.beginGroup(str.Identifier.c_str());
+
         for(ni=preferences.begin(); ni!=preferences.end(); ni++)
         {
             settings.setValue(ni->first.c_str(), ni->second.c_str());
         }
+
         settings.endGroup();
+
     }
 }
 //--------------------------------------------------------------------------------

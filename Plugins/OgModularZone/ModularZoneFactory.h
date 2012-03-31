@@ -16,10 +16,7 @@
 //Place - Suite 330, Boston, MA 02111-1307, USA, or go to
 //http://www.gnu.org/copyleft/lesser.txt.
 ////////////////////////////////////////////////////////////////////////////////*/
-
-#ifndef MODULAR_ZONE_FACTORY_H
-#define MODULAR_ZONE_FACTORY_H
-
+#pragma once
 #include "OgitorsPrerequisites.h"
 #include "BaseEditor.h"
 #include "OgitorsRoot.h"
@@ -33,7 +30,7 @@ using namespace Ogitors;
 namespace MZP
 {
 
-    class PluginExport ModularZoneFactory: public CNodeEditorFactory
+	class PluginExport ModularZoneFactory: public CNodeEditorFactory
     {
     public:
         /** @copydoc CBaseEditorFactory::CBaseEditorFactory() */
@@ -45,26 +42,24 @@ namespace MZP
         /** @copydoc CBaseEditorFactory::GetPlaceHolderName() */
         virtual Ogre::String GetPlaceHolderName() {return "scbMarker.mesh";};
 
-        CBaseEditorFactory* duplicate(OgitorsView *view);
+		CBaseEditorFactory* duplicate(OgitorsView *view);
 
-        void setZoneType(Ogre::String);
+		void setZoneType(Ogre::String);
 
-        void setZoneListWidget(ZoneListWidget* widget){mZoneListWidget = widget;}
-        void loadZoneTemplates(void);//load the available designs for the current project
-        void setCurrentZoneTemplate(int key);//sets the current template
-        int getCurrentZoneTemplate(void);//returns the current template or  -1 if none selected
-        ZoneInfo* getZoneTemplate(int key);//returns the Zone matching param key
-        const ZoneInfoMap getZoneTemplateMap(void);
-        int addZoneTemplate(ZoneInfo);
-        void updateZoneListWidget(int);
-    private:
-        Ogre::String mZoneType;//(for future use)
-        int mCurrentZoneTemplate;// key of current design. -1 = none selected
-        ZoneInfoMap mZoneTemplates; //a map of available zone designs
-        ZoneListWidget* mZoneListWidget; 
+		void setZoneListWidget(ZoneListWidget* widget){mZoneListWidget = widget;}
+		void loadZoneTemplates(void);//load the available designs for the current project
+		void setCurrentZoneTemplate(int key);//sets the current template
+		int getCurrentZoneTemplate(void);//returns the current template or  -1 if none selected
+		ZoneInfo* getZoneTemplate(int key);//returns the Zone matching param key
+		const ZoneInfoMap getZoneTemplateMap(void);
+		int addZoneTemplate(ZoneInfo);
+		void updateZoneListWidget(int);
+	private:
+		Ogre::String mZoneType;//(for future use)
+		int mCurrentZoneTemplate;// key of current design. -1 = none selected
+		ZoneInfoMap mZoneTemplates; //a map of available zone designs
+		ZoneListWidget* mZoneListWidget; 
 
-        ZoneInfo _loadZoneDescription(Ogre::String filename);
+		ZoneInfo _loadZoneDescription(Ogre::String filename);
     };
 }
-
-#endif

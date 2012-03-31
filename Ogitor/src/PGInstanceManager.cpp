@@ -40,17 +40,16 @@
 #include "PGInstanceEditor.h"
 #include "OgitorsUndoManager.h"
 #include "tinyxml.h"
-#include "ofs.h"
 
-#include "PagedGeometry.h"
-#include "BatchPage.h"
-#include "ImpostorPage.h"
-#include "TreeLoader3D.h"
+#include "PAGEDGEOMETRY/PagedGeometry.h"
+#include "PAGEDGEOMETRY/BatchPage.h"
+#include "PAGEDGEOMETRY/ImpostorPage.h"
+#include "PAGEDGEOMETRY/TreeLoader3D.h"
 
 using namespace Ogitors;
 using namespace Forests;
 
-//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------    
 namespace Ogitors
 {
     class AddInstanceUndo : public OgitorsUndoBase
@@ -63,7 +62,7 @@ namespace Ogitors
         unsigned int  mObjectID;
         int           mIndex;
     };
-    //-----------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------    
     class RemoveInstanceUndo : public OgitorsUndoBase
     {
     public:
@@ -77,14 +76,14 @@ namespace Ogitors
         Ogre::Real    mYaw;
     };
 }
-//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------    
 bool AddInstanceUndo::apply()
 {
     CPGInstanceManager *man = static_cast<CPGInstanceManager*>(OgitorsRoot::getSingletonPtr()->FindObject(mObjectID));
     if(man)
     {
         PGInstanceInfo info = man->getInstanceInfo(mIndex);
-
+        
         man->_deleteChildEditor(mIndex);
         man->removeInstance(mIndex);
 
@@ -93,7 +92,7 @@ bool AddInstanceUndo::apply()
 
     return true;
 }
-//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------    
 bool RemoveInstanceUndo::apply()
 {
     CPGInstanceManager *man = static_cast<CPGInstanceManager *>(OgitorsRoot::getSingletonPtr()->FindObject(mObjectID));
@@ -108,7 +107,7 @@ bool RemoveInstanceUndo::apply()
 
     return true;
 }
-//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------    
 //-----------------------------------------------------------------------------------------
 CPGInstanceManager::CPGInstanceManager(CBaseEditorFactory *factory) : CBaseEditor(factory),
 mHandle(0), mPGHandle(0), mEntityHandle(0), mPlacementMode(false), mNextInstanceIndex(0)
@@ -144,7 +143,7 @@ bool CPGInstanceManager::update(float timePassed)
     return false;
 }
 //-----------------------------------------------------------------------------------------
-void CPGInstanceManager::showBoundingBox(bool bShow)
+void CPGInstanceManager::showBoundingBox(bool bShow) 
 {
 }
 //-----------------------------------------------------------------------------------------
@@ -173,7 +172,7 @@ void CPGInstanceManager::setSelectedImpl(bool bSelected)
 //-----------------------------------------------------------------------------------------
 void CPGInstanceManager::_save(Ogre::String filename)
 {
-    std::stringstream stream;
+    std::ofstream stream(filename.c_str());
 
     PGInstanceList::iterator it = mInstanceList.begin();
 
@@ -190,15 +189,13 @@ void CPGInstanceManager::_save(Ogre::String filename)
 
         it++;
     }
-
-    OgitorsUtils::SaveStreamOfs(stream, filename);
 }
 //-----------------------------------------------------------------------------------------
 void CPGInstanceManager::onSave(bool forced)
 {
-    Ogre::String dir = "/PGInstances/";
-    OFS::OfsPtr& mFile = mOgitorsRoot->GetProjectFile();
-    mFile->createDirectory(dir.c_str());
+    Ogre::String dir = mOgitorsRoot->GetProjectOptions()->ProjectDir + "/PGInstances/";
+    dir = OgitorsUtils::QualifyPath(dir);
+    mSystem->MakeDirectory(dir);
 
     Ogre::String name = mName->get();
     std::replace(name.begin(), name.end(), '<', ' ');
@@ -206,12 +203,12 @@ void CPGInstanceManager::onSave(bool forced)
     std::replace(name.begin(), name.end(), '#', ' ');
 
     if(!mLastFileName.empty())
-        mFile->deleteFile(mLastFileName.c_str());
+        mSystem->DeleteFile(mLastFileName);
 
     if(!mTempFileName.empty())
-        mFile->deleteFile(mTempFileName.c_str());
+        mSystem->DeleteFile(mTempFileName);
 
-    Ogre::String filename = dir + Ogre::StringConverter::toString(mObjectID->get()) + "_" + name + ".instance";
+    Ogre::String filename = OgitorsUtils::QualifyPath(dir + "/" + Ogre::StringConverter::toString(mObjectID->get()) + "_" + name + ".instance");
 
     mLastFileName = filename;
 
@@ -228,7 +225,7 @@ void CPGInstanceManager::_onLoad()
     if(mTempModified->get())
     {
         if(mTempFileName.empty())
-            mTempFileName = "/Temp/tmp" + Ogre::StringConverter::toString(mObjectID->get()) + ".instance";
+            mTempFileName = OgitorsUtils::QualifyPath(mOgitorsRoot->GetProjectOptions()->ProjectDir + "/Temp/tmp" + Ogre::StringConverter::toString(mObjectID->get()) + ".instance");
 
         filename = mTempFileName;
     }
@@ -239,35 +236,15 @@ void CPGInstanceManager::_onLoad()
         std::replace(name.begin(), name.end(), '>', ' ');
         std::replace(name.begin(), name.end(), '#', ' ');
 
-        filename = "/PGInstances/" + Ogre::StringConverter::toString(mObjectID->get()) + "_" + name + ".instance";
+        name = Ogre::StringConverter::toString(mObjectID->get()) + "_" + name;
+
+        filename = OgitorsUtils::QualifyPath(mOgitorsRoot->GetProjectOptions()->ProjectDir + "/PGInstances/" + name + ".instance");
     }
 
-    OFS::OFSHANDLE handle;
+    std::ifstream stream(filename.c_str());
 
-    OFS::OfsPtr& mFile = mOgitorsRoot->GetProjectFile();
-
-    OFS::OfsResult ret = mFile->openFile(handle, filename.c_str());
-
-    if(ret != OFS::OFS_OK)
+    if(!stream.is_open())
         return;
-
-    unsigned int file_size = 0;
-
-    mFile->getFileSize(handle, file_size);
-
-    if(file_size == 0)
-    {
-        mFile->closeFile(handle);
-        return;
-    }
-
-    char *buffer = new char[file_size];
-    mFile->read(handle, buffer, file_size);
-
-    std::stringstream stream;
-    stream << buffer;
-
-    delete [] buffer;
 
     if(!mTempModified->get())
         mLastFileName = filename;
@@ -285,7 +262,7 @@ void CPGInstanceManager::_onLoad()
         if(list.size() == 3)
         {
             PGInstanceInfo info;
-
+            
             info.pos = Ogre::StringConverter::parseVector3(list[0]);
             info.scale = Ogre::StringConverter::parseReal(list[1]);
             info.yaw = Ogre::StringConverter::parseReal(list[2]);
@@ -295,7 +272,7 @@ void CPGInstanceManager::_onLoad()
         else if(list.size() == 4)
         {
             PGInstanceInfo info;
-
+            
             int index = Ogre::StringConverter::parseInt(list[0]);
             info.pos = Ogre::StringConverter::parseVector3(list[1]);
             info.scale = Ogre::StringConverter::parseReal(list[2]);
@@ -308,9 +285,11 @@ void CPGInstanceManager::_onLoad()
                 mNextInstanceIndex = index + 1;
         }
     }
+
+    stream.close();
 }
 //-----------------------------------------------------------------------------------------
-bool CPGInstanceManager::getObjectContextMenu(UTFStringVector &menuitems)
+bool CPGInstanceManager::getObjectContextMenu(UTFStringVector &menuitems) 
 {
     menuitems.clear();
 
@@ -333,7 +312,7 @@ bool CPGInstanceManager::getObjectContextMenu(UTFStringVector &menuitems)
     return true;
 }
 //-------------------------------------------------------------------------------
-void CPGInstanceManager::onObjectContextMenu(int menuresult)
+void CPGInstanceManager::onObjectContextMenu(int menuresult) 
 {
     if(menuresult == 0)
     {
@@ -349,16 +328,16 @@ void CPGInstanceManager::onObjectContextMenu(int menuresult)
         if(mShowChildren)
         {
             mHideChildrenInProgress = true;
-
+            
             NameObjectPairList::iterator i, iend;
             iend = mChildren.end();
-
+            
             for (i = mChildren.begin(); i != iend; ++i)
             {
                 mSystem->DeleteTreeItem(i->second);
                 i->second->destroy();
             }
-
+            
             mChildren.clear();
 
             mHideChildrenInProgress = false;
@@ -368,7 +347,7 @@ void CPGInstanceManager::onObjectContextMenu(int menuresult)
         {
             mShowChildren = true;
             PGInstanceList::iterator it = mInstanceList.begin();
-
+            
             while(it != mInstanceList.end())
             {
                 _createChildEditor(it->first, it->second.pos, it->second.scale, it->second.yaw);
@@ -379,7 +358,7 @@ void CPGInstanceManager::onObjectContextMenu(int menuresult)
 }
 //-----------------------------------------------------------------------------------------
 void CPGInstanceManager::createProperties(OgitorsPropertyValueMap &params)
-{
+{    
     PROPERTY_PTR(mModel           , "model"           , Ogre::String , "" , 0, SETTER(Ogre::String, CPGInstanceManager, _setModel));
     PROPERTY_PTR(mPageSize        , "pagesize"        , int          , 75 , 0, SETTER(int, CPGInstanceManager, _setPageSize));
     PROPERTY_PTR(mBatchDistance   , "batchdistance"   , int          , 75 , 0, SETTER(int, CPGInstanceManager, _setBatchDistance));
@@ -468,7 +447,7 @@ bool CPGInstanceManager::load(bool async)
     {
         try
         {
-            mEntityHandle = mOgitorsRoot->GetSceneManager()->createEntity(mName->get(), mModel->get() + ".mesh", PROJECT_RESOURCE_GROUP);
+            mEntityHandle = mOgitorsRoot->GetSceneManager()->createEntity(mName->get(), mModel->get() + ".mesh", "ProjectResources");
             mUsingPlaceHolderMesh = false;
         }
         catch(...)
@@ -507,7 +486,7 @@ bool CPGInstanceManager::unLoad()
     {
         if(mTempFileName.empty())
         {
-            mTempFileName = "/Temp/tmp" + Ogre::StringConverter::toString(mObjectID->get()) + ".instance";
+            mTempFileName = OgitorsUtils::QualifyPath(mOgitorsRoot->GetProjectOptions()->ProjectDir + "/Temp/tmp" + Ogre::StringConverter::toString(mObjectID->get()) + ".instance");
         }
 
         _save(mTempFileName);
@@ -562,7 +541,7 @@ int CPGInstanceManager::addInstance(const Ogre::Vector3& pos, const Ogre::Real& 
     instance.scale = scale;
     instance.yaw = yaw;
     instance.instance = 0;
-
+        
     int result = mNextInstanceIndex++;
     mInstanceList.insert(PGInstanceList::value_type(result, instance));
 
@@ -601,7 +580,7 @@ void CPGInstanceManager::modifyInstancePosition(int index, const Ogre::Vector3& 
             mHandle->deleteTrees(it->second.pos, 0.01f, mEntityHandle);
             mHandle->addTree(mEntityHandle, pos, Ogre::Degree(it->second.yaw), it->second.scale);
         }
-
+        
         it->second.pos = pos;
     }
 }
@@ -717,8 +696,8 @@ bool CPGInstanceManager::_setCastShadows(OgitorsPropertyBase* property, const bo
     if(mEntityHandle)
     {
         mEntityHandle->setCastShadows(value);
-    }
-
+    } 
+   
     if(mPGHandle)
         mPGHandle->reloadGeometry();
 
@@ -730,7 +709,7 @@ void CPGInstanceManager::_createChildEditor(int index, Ogre::Vector3 pos, Ogre::
     if(index == -1 || !mShowChildren)
         return;
 
-    //We do not want an UNDO to be created for creation of children
+    //We do not want an UNDO to be created for creation of children 
     OgitorsUndoManager::getSingletonPtr()->BeginCollection("Eat Creation");
 
     OgitorsPropertyValueMap params;
@@ -754,7 +733,7 @@ void CPGInstanceManager::_deleteChildEditor(int index)
     if(index == -1 || !mShowChildren)
         return;
 
-    //We do not want an UNDO to be created for deletion of children
+    //We do not want an UNDO to be created for deletion of children 
     OgitorsUndoManager::getSingletonPtr()->BeginCollection("Eat Deletion");
 
     PGInstanceList::iterator it = mInstanceList.find(index);
@@ -770,7 +749,7 @@ void CPGInstanceManager::_deleteChildEditor(int index)
         }
         mHideChildrenInProgress = false;
     }
-
+    
     OgitorsUndoManager::getSingletonPtr()->EndCollection(false, true);
 }
 //-----------------------------------------------------------------------------------------
@@ -782,7 +761,7 @@ void CPGInstanceManager::OnMouseLeftDown (CViewportEditor *viewport, Ogre::Vecto
 {
     Ogre::Camera *cam = viewport->getCameraEditor()->getCamera();
     Ogre::Viewport *vp = static_cast<Ogre::Viewport*>(viewport->getHandle());
-
+    
     float width = vp->getActualWidth();
     float height = vp->getActualHeight();
     Ogre::Ray mRay = cam->getCameraToViewportRay(point.x / width, point.y / height);
@@ -798,7 +777,7 @@ void CPGInstanceManager::OnMouseLeftDown (CViewportEditor *viewport, Ogre::Vecto
         OgitorsUndoManager::getSingletonPtr()->BeginCollection("Add Instance");
 
         _createChildEditor(index , vPos, scale, yaw);
-
+        
         OgitorsUndoManager::getSingletonPtr()->AddUndo(OGRE_NEW AddInstanceUndo(mObjectID->get(), index));
         OgitorsUndoManager::getSingletonPtr()->EndCollection(true);
     }

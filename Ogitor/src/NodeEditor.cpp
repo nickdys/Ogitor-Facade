@@ -43,33 +43,6 @@
 using namespace Ogitors;
 
 //-----------------------------------------------------------------------------------------
-void saveUserData(OgitorsCustomPropertySet *set, TiXmlElement *pParent)
-{
-    if(!set || !pParent)
-        return;
-
-    OgitorsPropertyVector vec = set->getPropertyVector();
-
-    if(vec.size() < 1)
-        return;
-
-    TiXmlElement *pNode = pParent->InsertEndChild(TiXmlElement("userData"))->ToElement();
-
-    for(unsigned int i = 0;i < vec.size();i++)
-    {
-        OgitorsPropertyBase *property = vec[i];
-        const OgitorsPropertyDef *def = property->getDefinition();
-        OgitorsPropertyValue value;
-        value.propType = property->getType();
-        value.val = property->getValue();
-
-        TiXmlElement *pProp = pNode->InsertEndChild(TiXmlElement("property"))->ToElement();
-        pProp->SetAttribute("type", Ogre::StringConverter::toString(value.propType).c_str());
-        pProp->SetAttribute("name", property->getName().c_str());
-        pProp->SetAttribute("data", OgitorsUtils::GetValueString(value).c_str());
-    }
-}
-//-----------------------------------------------------------------------------------------
 CNodeEditor::CNodeEditor(CBaseEditorFactory *factory) : CBaseEditor(factory), 
 mAutoTrackTargetPtr(0)
 {
@@ -188,8 +161,6 @@ bool CNodeEditor::getObjectContextMenu(UTFStringVector &menuitems)
         menuitems.push_back(OTR("UnLock") + ";:/icons/unlock.svg");
     }
 
-    menuitems.push_back(OTR("Euclidean Rotation"));
-
     return true;
 }
 //-------------------------------------------------------------------------------
@@ -199,24 +170,6 @@ void CNodeEditor::onObjectContextMenu(int menuresult)
         mLocked->set(true);
     else if(menuresult == 1)
         mLocked->set(false);
-    else if(menuresult == 2)
-    {
-        Ogre::NameValuePairList params;
-        if(mSystem->DisplayEuclidDialog(params))
-        {
-            Ogre::Real fYaw = Ogre::StringConverter::parseReal(params["input2"]);
-            Ogre::Real fPitch = Ogre::StringConverter::parseReal(params["input1"]);
-            Ogre::Real fRoll = Ogre::StringConverter::parseReal(params["input3"]);
-
-            Ogre::Quaternion quatR, quatY, quatP;
-            quatY.FromAngleAxis(Ogre::Degree(fYaw), Ogre::Vector3::UNIT_Y);
-            quatP.FromAngleAxis(Ogre::Degree(fPitch), Ogre::Vector3::UNIT_X);
-            quatR.FromAngleAxis(Ogre::Degree(fRoll), Ogre::Vector3::UNIT_Z);
-            Ogre::Quaternion newQuat = quatY * quatP * quatR;
-
-            mOrientation->set(newQuat);
-        }
-    }
 }
 //-----------------------------------------------------------------------------------------
 bool CNodeEditor::_setPosition(OgitorsPropertyBase* property, const Ogre::Vector3& position)
@@ -413,9 +366,7 @@ TiXmlElement* CNodeEditor::exportDotScene(TiXmlElement *pParent)
     NameObjectPairList::const_iterator it = mChildren.begin();
     while(it != mChildren.end())
     {
-        TiXmlElement *result = it->second->exportDotScene(pNode);
-        saveUserData(it->second->getCustomProperties(), result);
-
+        it->second->exportDotScene(pNode);
         it++;
     }
 
@@ -446,9 +397,6 @@ CNodeEditorFactory::CNodeEditorFactory(OgitorsView *view) : CBaseEditorFactory(v
 
     OgitorsPropertyDefMap::iterator it = mPropertyDefs.find("layer");
     it->second.setAccess(false, false);
-
-    it = mPropertyDefs.find("updatescript");
-    it->second.setAccess(true, true);
 }
 //-----------------------------------------------------------------------------------------
 CBaseEditorFactory *CNodeEditorFactory::duplicate(OgitorsView *view)

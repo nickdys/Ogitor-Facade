@@ -31,83 +31,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "DotSceneSerializer.h"
-#include "ofs.h"
 
 using namespace Ogitors;
 
-//----------------------------------------------------------------------------
-void extractOFS(Ogre::String path)
-{
-    unsigned int MAX_BUFFER_SIZE = 16 * 1024 * 1024;
-
-    char *tmp_buffer = new char[MAX_BUFFER_SIZE];
-
-    OFS::OfsPtr& ofsFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-
-    OFS::FileList list;
-
-    ofsFile->listFilesRecursive("/", list);
-
-    std::sort(list.begin(), list.end(), OFS::FileEntry::Compare);
-
-    std::ofstream out_handle;
-    OFS::OFSHANDLE in_handle;
-
-    for(unsigned int i = 0;i < list.size();i++)
-    {
-        std::string file_path = path + list[i].name;
-
-        if(list[i].flags & OFS::OFS_DIR)
-        {
-            OgitorsSystem::getSingletonPtr()->MakeDirectory(file_path);
-        }
-        else
-        {
-            std::string file_ofs_path = list[i].name;
-
-            out_handle.open(file_path.c_str(), std::ofstream::out | std::ofstream::binary);
-
-            if(out_handle.is_open())
-            {
-                try
-                {
-                    OFS::OfsResult ret = ofsFile->openFile(in_handle, file_ofs_path.c_str());
-                    if(ret != OFS::OFS_OK)
-                    {
-                        out_handle.close();
-                        continue;
-                    }
-
-                    unsigned int total = list[i].file_size;
-
-                    while(total > 0)
-                    {
-                        if(total < MAX_BUFFER_SIZE)
-                        {
-                            ofsFile->read(in_handle, tmp_buffer, total);
-                            out_handle.write(tmp_buffer, total);
-                            total = 0;
-                        }
-                        else
-                        {
-                            ofsFile->read(in_handle, tmp_buffer, MAX_BUFFER_SIZE);
-                            out_handle.write(tmp_buffer, MAX_BUFFER_SIZE);
-                            total -= MAX_BUFFER_SIZE;
-                        }
-                    }
-                }
-                catch(OFS::Exception&)
-                {
-                }
-
-                out_handle.close();
-                ofsFile->closeFile(in_handle);
-            }
-        }
-    }
-
-    delete [] tmp_buffer;
-}
 //----------------------------------------------------------------------------
 void saveUserData(OgitorsCustomPropertySet *set, TiXmlElement *pParent)
 {
@@ -136,13 +62,15 @@ void saveUserData(OgitorsCustomPropertySet *set, TiXmlElement *pParent)
     }
 }
 //----------------------------------------------------------------------------------------
-int CDotSceneSerializer::Export(bool SaveAs, Ogre::String exportfile)
+int CDotSceneSerializer::Export(bool SaveAs)
 {
     OgitorsRoot *ogRoot = OgitorsRoot::getSingletonPtr();
     OgitorsSystem *mSystem = OgitorsSystem::getSingletonPtr();
 
     PROJECTOPTIONS *pOpt = ogRoot->GetProjectOptions();
     Ogre::String fileName = pOpt->ProjectName;
+
+    PROJECTOPTIONS tmpOPT = *pOpt;
 
     UTFStringVector extlist;
     extlist.push_back(OTR("DotScene File"));
@@ -153,13 +81,26 @@ int CDotSceneSerializer::Export(bool SaveAs, Ogre::String exportfile)
     if(fileName == "") 
         return SCF_CANCEL;
 
-    Ogre::String newDir = OgitorsUtils::ExtractFilePath(fileName);
+    Ogre::String oldProjDir = pOpt->ProjectDir;
+    Ogre::String oldProjName = pOpt->ProjectName;
 
-    extractOFS(newDir);
-    mSystem->DeleteFile(newDir + "/" + pOpt->ProjectName + ".ogscene");
+    pOpt->ProjectName = OgitorsUtils::ExtractFileName(fileName);
+    pOpt->ProjectDir = OgitorsUtils::ExtractFilePath(fileName);
+
+    ogRoot->AdjustUserResourceDirectories(oldProjDir);
+
+    Ogre::String newDir = pOpt->ProjectDir;
+
+    mSystem->MakeDirectory(newDir);
+    mSystem->CopyFilesEx(oldProjDir + "*", newDir);
+
+    pOpt->ProjectName = oldProjName;
+    pOpt->ProjectDir = oldProjDir;
+
+    //TODO: figure out how to make Ogitor link to the active project file again (ogscene)
 
     TiXmlDocument *pXMLDoc = new TiXmlDocument();
-    pXMLDoc->InsertEndChild(TiXmlDeclaration("1.0", "UTF-8", ""));
+    pXMLDoc->InsertEndChild(TiXmlDeclaration( "1.0", "UTF-8", ""));
     pXMLDoc->InsertEndChild(TiXmlElement("scene"));
 
     // export basic info
@@ -174,14 +115,13 @@ int CDotSceneSerializer::Export(bool SaveAs, Ogre::String exportfile)
     {
         TiXmlElement *pResourceLocation = pResourceLocations->InsertEndChild(TiXmlElement("resourceLocation"))->ToElement();
         Ogre::String loc = pOpt->ResourceDirectories[r];
-
-        pResourceLocation->SetAttribute("type", "FileSystem");
+        loc.erase(0,3);
+        if(pOpt->ResourceDirectories[r].substr(0,2) == "ZP")
+            pResourceLocation->SetAttribute("type", "Zip");
+        else
+            pResourceLocation->SetAttribute("type", "FileSystem");
 
         std::replace(loc.begin(),loc.end(),'\\','/');
-
-        if(loc[0] != '.')
-            loc = "./" + loc;
-
         pResourceLocation->SetAttribute("name", loc.c_str());
     }
 
@@ -194,9 +134,8 @@ int CDotSceneSerializer::Export(bool SaveAs, Ogre::String exportfile)
     NameObjectPairList::const_iterator smIt = smList.begin();
     while(smIt != smList.end())
     {
-        TiXmlElement *result = smIt->second->exportDotScene(pEnvironment);
-        saveUserData(smIt->second->getCustomProperties(), result);
-        smIt++;        
+        smIt->second->exportDotScene(pEnvironment);
+        smIt++;
     }
 
     // export viewports
@@ -204,8 +143,7 @@ int CDotSceneSerializer::Export(bool SaveAs, Ogre::String exportfile)
     NameObjectPairList::const_iterator vpIt = vpList.begin();
     while(vpIt != vpList.end())
     {
-        TiXmlElement *result = vpIt->second->exportDotScene(pEnvironment);
-        saveUserData(vpIt->second->getCustomProperties(), result);
+        vpIt->second->exportDotScene(pEnvironment);
         vpIt++;
     }
 
@@ -214,8 +152,7 @@ int CDotSceneSerializer::Export(bool SaveAs, Ogre::String exportfile)
     NameObjectPairList::const_iterator tlIt = terrainList.begin();
     while(tlIt != terrainList.end())
     {
-        TiXmlElement *result = tlIt->second->exportDotScene(pRoot);
-        saveUserData(tlIt->second->getCustomProperties(), result);
+        tlIt->second->exportDotScene(pRoot);
         tlIt++;
     }
 
@@ -271,6 +208,11 @@ int CDotSceneSerializer::Export(bool SaveAs, Ogre::String exportfile)
     else
         OgitorsSystem::getSingletonPtr()->DisplayMessageDialog(OTR("An error occured during export.. :("), DLGTYPE_OK);
 
+    *pOpt = tmpOPT;
+
+
     return SCF_OK;
 }
 //----------------------------------------------------------------------------
+
+

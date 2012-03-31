@@ -79,7 +79,7 @@ bool CMarkerEditor::load(bool async)
     
     if(CNodeEditor::load())
     {
-        mMaterial = Ogre::MaterialManager::getSingletonPtr()->create("mt" + mName->get(),PROJECT_RESOURCE_GROUP);
+        mMaterial = Ogre::MaterialManager::getSingletonPtr()->create("mt" + mName->get(),"ProjectResources");
         mMaterial->setAmbient(0,0,0);
         mMaterial->setDiffuse(0.1f,0.1f,0.1f,1.0f);
         mMaterial->setSpecular(0,0,0,1);

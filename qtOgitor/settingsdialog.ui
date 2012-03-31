@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>402</width>
+    <width>400</width>
     <height>300</height>
    </rect>
   </property>
@@ -72,7 +72,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="mGeneralTab_3">
       <attribute name="title">
@@ -328,114 +328,6 @@
           </property>
           <property name="text">
            <string>...</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </widget>
-     <widget class="QWidget" name="mAutoBackupTab">
-      <attribute name="title">
-       <string>Backup</string>
-      </attribute>
-      <widget class="QGroupBox" name="groupBox">
-       <property name="geometry">
-        <rect>
-         <x>2</x>
-         <y>2</y>
-         <width>391</width>
-         <height>121</height>
-        </rect>
-       </property>
-       <property name="title">
-        <string/>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_10">
-        <item row="2" column="0">
-         <widget class="QLabel" name="autoBackupEveryLabel">
-          <property name="text">
-           <string>Backup every</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="autoBackupMaxStoredLabel">
-          <property name="text">
-           <string>Max. store backups:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="autoBackupLocationLabel">
-          <property name="text">
-           <string>Backup location:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1" colspan="3">
-         <widget class="QLineEdit" name="autoBackupPathEdit">
-          <property name="autoFillBackground">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="4">
-         <widget class="QComboBox" name="autoBackupPeriodTypeComboBox">
-          <property name="maximumSize">
-           <size>
-            <width>120</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <item>
-           <property name="text">
-            <string>minutes</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>hours</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QCheckBox" name="enableAutoBackupBox">
-          <property name="text">
-           <string>Enable auto backup</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="3">
-         <widget class="QSpinBox" name="autoBackupTimeSpinBox">
-          <property name="maximumSize">
-           <size>
-            <width>128</width>
-            <height>16777215</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="3">
-         <widget class="QSpinBox" name="autoBackupMaxStoredSpinBox"/>
-        </item>
-        <item row="4" column="4">
-         <widget class="QPushButton" name="autoBackupPathButton">
-          <property name="maximumSize">
-           <size>
-            <width>25</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="4">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string> (0 = no restriction)</string>
           </property>
          </widget>
         </item>

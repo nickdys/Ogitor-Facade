@@ -430,7 +430,6 @@ LayerViewWidget::LayerViewWidget(QWidget *parent) :
 
     treeWidget = new LayerTreeWidget(this);
     toolBar = new QToolBar("", this);
-    toolBar->setObjectName(QString::fromUtf8("layerDockWidgettoolBar"));
     toolBar->setIconSize(QSize(20,20));
     toolBar->setToolButtonStyle(Qt::ToolButtonIconOnly);
     toolBar->addAction(actAddLayer);

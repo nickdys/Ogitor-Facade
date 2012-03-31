@@ -33,18 +33,14 @@
 #define ADDTERRAINDIALOG_HXX
 
 #include <QtGui/QDialog>
-#include <Ogre.h>
 
 #include "ui_addterraindialog.h"
 
 class AddTerrainDialog : public QDialog, public Ui::addterraindialog {
     Q_OBJECT
 public:
-    AddTerrainDialog(QWidget *parent, Ogre::NameValuePairList &params);
+    AddTerrainDialog(QWidget *parent, QStringList& items);
     virtual ~AddTerrainDialog();
-private:
-    QGraphicsScene mScene;
-    void drawPageMap(Ogre::NameValuePairList &params);
 };
 
 #endif // ADDTERRAINDIALOG_HXX

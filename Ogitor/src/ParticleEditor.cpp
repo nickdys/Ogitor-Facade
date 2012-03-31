@@ -109,7 +109,7 @@ bool CParticleEditor::load(bool async)
         mParticleHandle = mOgitorsRoot->GetSceneManager()->createParticleSystem("particle" + mName->get(), mParticleSystem->get());
         mHandle->attachObject(mParticleHandle);
         mParticleHandle->setCastShadows(mCastShadows->get());
-        mParticleHandle->setKeepParticlesInLocalSpace(true);
+        //mParticleHandle->setKeepParticlesInLocalSpace(true);
         mParticleHandle->setVisible(true);
         Ogre::ParticleSystem::setDefaultNonVisibleUpdateTimeout(5);
 

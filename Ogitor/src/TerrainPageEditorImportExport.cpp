@@ -150,7 +150,7 @@ bool CTerrainPageEditor::importHeightMap(Ogre::String filename, Ogre::Real fBias
         try
         {
             FILE *f = fopen(filename.c_str(),"rb");
-            size_t byte_read = fread(data,sizeof(float),vertexNum,f);
+            fread(data,sizeof(float),vertexNum,f);
             fclose(f);
         }
         catch(...)
@@ -671,59 +671,6 @@ bool CTerrainPageEditor::exportHeightMap(Ogre::String path, Ogre::String filenam
         img.save(filename);
 
         OGRE_FREE(idata, Ogre::MEMCATEGORY_RESOURCE);
-    }
-    else
-    {
-        mSystem->DisplayMessageDialog(OTR("This File Format not Supported"), DLGTYPE_OK);
-        
-        if(unload)
-            unLoad();
-
-        return false;
-    }
-
-    if(unload)
-        unLoad();
-
-    return true;
-}
-//-----------------------------------------------------------------------------------------
-bool CTerrainPageEditor::exportCompositeMap(Ogre::String path, Ogre::String filename)
-{
-    if(path.empty())
-    {
-        UTFStringVector extlist;
-        extlist.push_back(OTR("PNG"));
-        extlist.push_back("*.png");
-        filename = mSystem->DisplaySaveDialog(OTR("Export Compositemap"),extlist);
-        if(filename == "") 
-            return false;
-    }
-    else
-    {
-        if(filename.empty())
-            filename = "PageX" + Ogre::StringConverter::toString(mPageX->get()) + "Y" + Ogre::StringConverter::toString(mPageY->get()) + "_composite.png";
-
-        filename = OgitorsUtils::QualifyPath(path + "/" + filename);
-    }
-
-    bool unload = !mLoaded->get();
-
-    load(false);
-
-    float *data = mHandle->getHeightData();
-    int numvertexes = mHandle->getSize() * mHandle->getSize();
-
-    Ogre::String namePart = OgitorsUtils::ExtractFileName(filename);
-    namePart.erase(0, namePart.find("."));
-
-    if(namePart == ".png")
-    {
-        Ogre::Image img;
-
-        mHandle->getCompositeMap()->convertToImage(img);
-
-        img.save(filename);
     }
     else
     {

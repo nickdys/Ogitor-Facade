@@ -16,9 +16,7 @@
 //Place - Suite 330, Boston, MA 02111-1307, USA, or go to
 //http://www.gnu.org/copyleft/lesser.txt.
 ////////////////////////////////////////////////////////////////////////////////*/
-
-#ifndef MODULAR_ZONE_TOOLBAR_H
-#define MODULAR_ZONE_TOOLBAR_H
+#pragma once
 
 #include <QtGui/QWidget>
 #include <QtGui/QToolBar>
@@ -31,26 +29,37 @@
 
 namespace MZP
 {
-    
-    class ModularZoneToolbar : public QWidget
-    {
-        Q_OBJECT;
-    public:
-        ModularZoneToolbar(QWidget *parent = 0);
-        virtual ~ModularZoneToolbar(void);
-        QToolBar* getToolbar(void){return mZoneSelectionToolbar;}
 
-        //Slots
-    public Q_SLOTS:
-        void addZoneProperties(void);
-        void createZone(void);
+	
+	class ModularZoneToolbar : public QWidget
+	{
+		Q_OBJECT;
+	public:
+		ModularZoneToolbar(QWidget *parent = 0);
+		virtual ~ModularZoneToolbar(void);
+		QToolBar* getToolbar(void){return mZoneSelectionToolbar;}
 
-    protected:
-        QToolBar* mZoneSelectionToolbar;
+		//Slots
+	public Q_SLOTS:
+		void addZoneProperties(void);
+		void createZone(void);
 
-        ZoneListWidget* widget;
-    };
+	protected:
+		QToolBar* mZoneSelectionToolbar;
+
+		ZoneListWidget* widget;
+
+	};
 }
-
-#endif
+//
+//To avoid linking errors we need to specify Moc'ing
+//GENERATE MOC FILES FOR HEADERS USING QT EVENTS (Q_OBJECT): 
+//Perform this step for all header files that inherit from a QT class - i.e. any class with Q_OBJECT. The following example uses a ficticious header file called MyHeaderFile.h You must fully qualify where the header file is or the moc utility will not find it.
+//
+//In the Solution Explorer, right Click on MyHeaderFile.h and select Properties -> Custom Build Step -> General  
+//Set Command Line to $(QTDIR)\bin\moc MyHeaderFile.h -o tmp\moc\moc_MyHeaderFile.cpp 
+//Set Description to Moc'ing MyHeaderFile.h ... 
+//Set Outputs to tmp\moc\moc_MyHeaderFile.cpp 
+//Set Additional Dependences $(QTDIR)\bin\moc.exe; 
+//Replace MyHeaderFile with the actual name of the header file to be Moc'd.  
 

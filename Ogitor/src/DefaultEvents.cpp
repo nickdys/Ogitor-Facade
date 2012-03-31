@@ -32,32 +32,20 @@
 
 #include "OgitorsPrerequisites.h"
 #include "DefaultEvents.h"
-#include "EventManager.h"
 
 namespace Ogitors
 {
-    const event_id_type EventManager::LOAD_STATE_CHANGE              = event_id_type("load_state_change");
-    const event_id_type EventManager::MODIFIED_STATE_CHANGE          = event_id_type("modified_state_change");
-    const event_id_type EventManager::UPDATE_FRAME                   = event_id_type("update_frame");
-    const event_id_type EventManager::UNDOMANAGER_NOTIFICATION       = event_id_type("undomanager_notification");
-    const event_id_type EventManager::RUN_STATE_CHANGE               = event_id_type("run_state_change");
-    const event_id_type EventManager::EDITOR_TOOL_CHANGE             = event_id_type("editor_tool_change");
-    const event_id_type EventManager::TERRAIN_EDITOR_CHANGE          = event_id_type("terrain_editor_change");
-    const event_id_type EventManager::AFTER_SCENE_EXPORT             = event_id_type("after_scene_export");
-    const event_id_type EventManager::GLOBAL_PREPARE_VIEW            = event_id_type("global_prepare_view");
-
-    event_id_type LoadStateChangeEvent::mID(EventManager::LOAD_STATE_CHANGE);
-    event_id_type RunStateChangeEvent::mID(EventManager::RUN_STATE_CHANGE);
-    event_id_type SceneModifiedChangeEvent::mID(EventManager::MODIFIED_STATE_CHANGE);
-    event_id_type EditorToolChangeEvent::mID(EventManager::EDITOR_TOOL_CHANGE);
-    event_id_type UpdateFrameEvent::mID(EventManager::UPDATE_FRAME);
-    event_id_type UndoManagerNotificationEvent::mID(EventManager::UNDOMANAGER_NOTIFICATION);
-    event_id_type TerrainEditorChangeEvent::mID(EventManager::TERRAIN_EDITOR_CHANGE);
-    event_id_type AfterSceneExportEvent::mID(EventManager::AFTER_SCENE_EXPORT);
-    event_id_type GlobalPrepareViewEvent::mID(EventManager::GLOBAL_PREPARE_VIEW);
+    event_id_type LoadStateChangeEvent::mID("load_state_change");
+    event_id_type RunStateChangeEvent::mID("run_state_change");
+    event_id_type SceneModifiedChangeEvent::mID("modified_state_change");
+    event_id_type EditorToolChangeEvent::mID("editor_tool_change");
+    event_id_type UpdateFrameEvent::mID("update_frame");
+    event_id_type UndoManagerNotificationEvent::mID("undomanager_notification");
+    event_id_type TerrainEditorChangeEvent::mID("terrain_editor_change");
 
     // Pure virtual Destructor
     IEvent::~IEvent()
     {
     }
+
 }

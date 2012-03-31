@@ -34,8 +34,6 @@
 // Interface to the script console
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#pragma once
-
 #include "OgitorsPrerequisites.h"
 
 #include <string>
@@ -67,10 +65,7 @@ namespace Ogitors
 
         // Retrieves the current output from the interpreter.
         unsigned int getOutput(unsigned int start, Ogre::StringVector& list);
-        // Clears output
         void clearOutput() { mOutput.clear(); }
-        // Adds a line to output
-        void addOutput(const std::string& text);
 
         std::string getPrompt() { return mPrompt; }
 

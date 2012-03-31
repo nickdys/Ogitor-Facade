@@ -43,9 +43,8 @@ namespace Ogitors
 
 #define OTR(a) mSystem->Translate(a)
 
-    const char OGITOR_VERSION[]                 = "0.5.0d";
-    const char PROJECT_RESOURCE_GROUP[]         = "ProjectResources";
-    const char PROJECT_TEMP_RESOURCE_GROUP[]    = "ProjectTemp";
+    const char OGITOR_VERSION[] = "0.4.4";
+
       
     /** Enum containing a unique ID for any editor class */
     enum EDITORTYPE 
@@ -59,7 +58,7 @@ namespace Ogitors
         ETYPE_SKY_MANAGER,      /** Sky manager editor type */
         ETYPE_LIGHT,            /** Light editor type */
         ETYPE_TERRAIN_MANAGER,  /** Terrain manager editor type */
-        ETYPE_WATER_MANAGER,    /** Terrain manager editor type */
+        ETYPE_WATER_MANAGER,  /** Terrain manager editor type */
         ETYPE_CUSTOM_MANAGER,   /** Custom manager editor type */
         ETYPE_CAMERA,           /** Camera editor type */
         ETYPE_ENTITY,           /** Entity editor type */
@@ -174,10 +173,10 @@ namespace Ogitors
         TOOL_SPLAT,         /** Splatting mode, allowing for splatting of textures on certain meshes (terrain) */
         TOOL_SPLATGRASS,    /** Grass Splatting mode, allowing for splatting of grass textures on certain meshes (terrain) */
         TOOL_PAINT,         /** Painting mode, allowing for painting on certain meshes (terrain) */
-        TOOL_SMOOTH         /** Smoothening mode, allowing for decreasing of amplitude of the mesh */
+        TOOL_SMOOTH         /** Smoothement mode, allowing for decreasing of amplitude of the mesh */
     };
     
-    /** Additional editor tools capabilities enumeration */
+    /** Additinal editor tools capabilities enumeration */
     enum EDITORTOOLSEX 
     {
         TOOL_EX_NONE = 0,     /** Default inaction */
@@ -234,13 +233,14 @@ namespace Ogitors
        unsigned int SPK_UP;                         /** Up key flag */
        unsigned int SPK_DOWN;                       /** Down key flag */
        unsigned int SPK_OBJECT_CENTERED_MOVEMENT;   /** Center-on-object key flag */
+       unsigned int SPK_SNAP_GROUND;                /** Do Snap Object to the Ground key flag */
        unsigned int SPK_FOCUS_OBJECT;               /** Gain focus on selected object key flag */
        unsigned int SPK_CLONE;                      /** Clone object key flag */
        unsigned int SPK_DELETE;                     /** Delete object key flag */
 
        unsigned int SPK_REVERSE_UPDATE;             /** Reverses the direction of the tool (deform/splat) */
        unsigned int SPK_SWITCH_AXIS;                /** Next axis selection key flag */
-       unsigned int SPK_SNAP;                       /** Snap to grid/ground (when free move) key flag */
+       unsigned int SPK_SNAP;                       /** Snap to grid key flag */
        unsigned int SPK_ADD_TO_SELECTION;           /** Add to selection key flag */
        unsigned int SPK_SUBTRACT_FROM_SELECTION;    /** Subtract from selection key flag */
        unsigned int SPK_ALWAYS_SELECT;              /** Always select key flag */
@@ -250,8 +250,8 @@ namespace Ogitors
     struct PROJECTOPTIONS
     {
       bool               IsNewProject;              /** Flag specifying if project is newly created */
-      Ogre::String       CreatedIn;                 /** The base directory of the Project Directory */
-      Ogre::String       ProjectDir;                /** Root directory in which project file(s) reside (absolute) */
+      Ogre::String       CreatedIn;                 /** the base directory of the Project Directory */
+      Ogre::String       ProjectDir;                /** Root directory in which project file(s) to reside (absolute) */
       Ogre::String       ProjectName;               /** Name of the project */
       Ogre::String       SceneManagerName;          /** Scene manager name */
       Ogre::String       TerrainDirectory;          /** Terrain data directory name (relative)*/
@@ -259,7 +259,7 @@ namespace Ogitors
       Ogre::String       CaelumDirectory;           /** Caelum (sky) data directory name (relative) */
       Ogre::String       ParticleUniverseDirectory; /** ParticleUniverse data directory name (relative) */
       Ogre::String       PagedGeometryDirectory;    /** PagedGeometry data directory name (relative) */
-      Ogre::String       SceneManagerConfigFile;    /** Scene manager configuration file name */   
+      Ogre::String       SceneManagerConfigFile;    /** Scene manager configiration file name */   
       Ogre::StringVector ResourceDirectories;       /** A string list of resource directory(ies) */
       float              CameraSpeed;               /** Camera Speed in turns of units per second */
       Ogre::Vector3      CameraPositions[11];       /** Camera positions array (scene can have multiple cameras) */
@@ -275,44 +275,35 @@ namespace Ogitors
       Ogre::String       LayerNames[31];            /** Array of Layer Names */ 
       bool               LayerVisible[31];          /** Array of Layer Visibilities */
       int                LayerCount;                /** Number of Layers */
-      float              WalkAroundHeight;          /** The height at which camera will be kept during walk around mode */ 
+      float              WalkAroundHeight;          /** The height at which camera will be kept during walkaround mode */ 
       Ogre::Real         VolumeSelectionDepth;      /** Depth of Volume Selection Box */
-      unsigned int       ObjectCount;               /** Number of objects in scene */
-      bool               AutoBackupEnabled;         /** Flag specifying if auto backup is enabled */
-      int                AutoBackupPeriod;          /** Period of time between auto backups */
-      int                AutoBackupPeriodType;      /** Period type of auto backups: 0 = minutes, 1 = hours */
-      Ogre::String       AutoBackupFolder;          /** Folder the backups are stored in */
-      int                AutoBackupNumber;          /** Number of backups to be stored */
+      unsigned int       ObjectCount;           /** Number of objects in scene */
     };
 
     /** Ogitor Plugin Features enumeration */
     enum PluginFeatureTypes
     {
-        PLUGIN_FEATURE_FACTORY = 1,                 /** Plugin has registered editor factory(ies) */
-        PLUGIN_FEATURE_SERIALIZER = 2,              /** Plugin has registered serializer(s) */
-        PLUGIN_FEATURE_TOOLBAR = 4,                 /** Plugin has registered toolbar(s) */
-        PLUGIN_FEATURE_DOCKWINDOW = 8,              /** Plugin has registered docking window(s) */
-        PLUGIN_FEATURE_TABWINDOW = 16,              /** Plugin has registered tabbed render window(s) */
-        PLUGIN_FEATURE_SCRIPTINTERPRETER = 32,      /** Plugin has registered script interpreter(s) */
-        PLUGIN_FEATURE_PREFWINDOW = 64              /** Plugin has registered preferences sections */
+        PLUGIN_FEATURE_FACTORY = 1,           /** Plugin has registered editor factory(ies) */
+        PLUGIN_FEATURE_SERIALIZER = 2,        /** Plugin has registered serializer(s) */
+        PLUGIN_FEATURE_TOOLBAR = 4,           /** Plugin has registered toolbar(s) */
+        PLUGIN_FEATURE_DOCKWINDOW = 8,        /** Plugin has registered docking window(s) */
+        PLUGIN_FEATURE_TABWINDOW = 16,        /** Plugin has registered tabbed render window(s) */
+        PLUGIN_FEATURE_SCRIPTINTERPRETER = 32 /** Plugin has registered script interpreter(s) */
     };
 
     /** Structure to hold data about plugin entries */
     struct PLUGINENTRY
     {
-        Ogre::String        mName;                   /** Name of the plugin */
-        Ogre::String        mPluginPath;             /** Path to the plugin */
-        bool                mLoaded;                 /** Indicator if plugin is loaded or not */
-        bool                mLoadingError;           /** Indicator if an error occurred during loading */
-        Ogre::DynLib       *mLibrary;                /** Pointer to plugin's library */
-        Ogre::StringVector  mEditorObjects;          /** List of Editor Objects this plugin registered */ 
-        Ogre::StringVector  mSerializers;            /** List of Serializers this plugin registered */ 
-        Ogre::StringVector  mScriptInterpreters;     /** List of Script Interpreters this plugin registered */ 
-        std::vector<void*>  mToolbars;               /** List of Toolbars this plugin registered */ 
-        std::vector<void*>  mDockWidgets;            /** List of DockWidgets this plugin registered */ 
-        std::vector<void*>  mTabWidgets;             /** List of TabWidgets this plugin registered */ 
-        std::vector<void*>  mPrefWidgets;            /** List of PrefWidgets this plugin registered */
-        unsigned int        mFeatures;               /** Bit field to store what his plugin adds to application*/  
+        Ogre::String  mName;                        /** Name of the plugin */
+        Ogre::String  mFileName;                    /** File name of the plugin */
+        Ogre::DynLib *mLibrary;                     /** Pointer to plugin's library */
+        Ogre::StringVector mEditorObjects;          /** List of Editor Objects this plugin registered */ 
+        Ogre::StringVector mSerializers;            /** List of Serializers this plugin registered */ 
+        Ogre::StringVector mScriptInterpreters;     /** List of Script Interpreters this plugin registered */ 
+        std::vector<void*> mToolbars;               /** List of Toolbars this plugin registered */ 
+        std::vector<void*> mDockWidgets;            /** List of DockWidgets this plugin registered */ 
+        std::vector<void*> mTabWidgets;            /** List of DockWidgets this plugin registered */ 
+        unsigned int  mFeatures;                    /** Bit field to store what his plugin adds to application*/  
     };
 
     typedef Ogre::map<void *, PLUGINENTRY>::type PluginEntryMap;
@@ -467,7 +458,7 @@ namespace Ogitors
         virtual void OnDragLeave () = 0;
         /**
         * Delegate function for drag move event
-        * @param vp the viewport in which the event occurred
+        * @param vp the viewport in which the event occured
         * @param modifier the keyboard modifiers
         * @param position mouse position relative to the viewports width/height
         * @return true if the drag event accepted, otherwise false
@@ -475,17 +466,55 @@ namespace Ogitors
         virtual bool OnDragMove (Ogre::Viewport *vp, unsigned int modifier, Ogre::Vector2& position) = 0;
         /**
         * Delegate function for drag dropped event
-        * @param vp the viewport in which the event occurred
+        * @param vp the viewport in which the event occured
         * @param delta mouse delta 
         */
         virtual void OnDragWheel (Ogre::Viewport *vp, float delta) = 0;
         /**
         * Delegate function for drag dropped event
-        * @param vp the viewport in which the event occurred
+        * @param vp the viewport in which the event occured
         * @param position mouse position relative to the viewports width/height
         */
         virtual void OnDragDropped (Ogre::Viewport *vp, Ogre::Vector2& position) = 0;
     };
+
+    //! A preferences editor class
+    /*!  
+    A class that is responsible for handling plugin values exposed to the editor
+    */
+    class PreferenceEditor
+    {
+    public:
+        /**
+        * Fetches preferences list
+        * @param preferences place to fill preference values into
+        */
+        virtual void  getPreferences(Ogre::NameValuePairList& preferences) = 0;
+        /**
+        * Fetches a QWidget pointer to put preferences into (internal use only)
+        * @return A QWidget type pointer
+        * @see QWidget
+        */
+        virtual void *getPreferencesWidget() = 0;
+        /**
+        * Applies preferences to the Ogitor
+        * @return true if preferences were applied successfully, otherwise false
+        */
+        virtual bool  applyPreferences() = 0;
+    };
+
+    //! Preferences registration
+    /*!  
+    A structure that is responsible for editor plugin registration
+    */
+    struct PreferenceEditorRegistrationStruct
+    {
+        Ogre::String      Identifier;
+        Ogre::String      ImagePath;
+        PreferenceEditor *PrefEditor;
+    };
+
+    typedef OgitorExport Ogre::vector<PreferenceEditorRegistrationStruct>::type PreferenceEditorVector;
 
     typedef OgitorExport Ogre::map<void *, DragDropHandler*>::type DragDropHandlerMap;
 

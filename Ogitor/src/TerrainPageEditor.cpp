@@ -52,13 +52,11 @@
 #include "PagingEditor.h"
 #include "tinyxml.h"
 #include "OgreStreamSerialiser.h"
-#include "OgreDeflate.h"
 #include "OgitorsUndoManager.h"
 #include "TerrainGroupUndo.h"
-#include "OFSDataStream.h"
 
-#include "PagedGeometry.h"
-#include "GrassLoader.h"
+#include "PAGEDGEOMETRY/PagedGeometry.h"
+#include "PAGEDGEOMETRY/GrassLoader.h"
 
 using namespace Forests;
 using namespace Ogitors;
@@ -66,6 +64,90 @@ using namespace Ogitors;
 PropertyOptionsVector CTerrainPageEditorFactory::mFadeTechniques;    /** List of fade techniques */
 PropertyOptionsVector CTerrainPageEditorFactory::mGrassTechniques;    /** List of grass techniques */
 
+//-----------------------------------------------------------------------------------------
+class OgreTerrainWorkaround: public Ogre::Terrain
+{
+public:
+    void setTerrainWorldSize(Ogre::Real newWorldSize)
+    {
+        if(mWorldSize != newWorldSize)
+        {
+            waitForDerivedProcesses();
+
+            mWorldSize = newWorldSize;
+            
+            updateBaseScale();
+            
+            deriveUVMultipliers();
+
+               mMaterialParamsDirty = true;
+
+            if(mIsLoaded)
+            {
+                Ogre::Rect dRect(0, 0, mSize, mSize);
+                dirtyRect(dRect);
+                update();
+            }
+
+            mModified = true;
+        }
+    }
+    //---------------------------------------------------------------------
+    void setTerrainMapSize(Ogre::uint16 newSize)
+    {
+        if(mSize != newSize)
+        {
+            waitForDerivedProcesses();
+
+            size_t numVertices = newSize * newSize;
+
+            Ogre::PixelBox src(mSize, mSize, 1, Ogre::PF_FLOAT32_R, (void*)getHeightData());
+            
+            float* tmpData = OGRE_ALLOC_T(float, numVertices, Ogre::MEMCATEGORY_GENERAL);
+
+            Ogre::PixelBox dst(newSize, newSize, 1, Ogre::PF_FLOAT32_R, tmpData);
+
+            Ogre::Image::scale(src, dst, Ogre::Image::FILTER_BILINEAR);
+
+            freeCPUResources();
+
+            mSize = newSize;
+
+            determineLodLevels();
+
+            updateBaseScale();
+            
+            deriveUVMultipliers();
+
+               mMaterialParamsDirty = true;
+
+            mHeightData = tmpData;
+            mDeltaData = OGRE_ALLOC_T(float, numVertices, Ogre::MEMCATEGORY_GEOMETRY);
+            memset(mDeltaData, 0, sizeof(float) * numVertices);
+
+            mQuadTree = OGRE_NEW Ogre::TerrainQuadTreeNode(this, 0, 0, 0, mSize, mNumLodLevels - 1, 0, 0);
+            mQuadTree->prepare();
+
+            // calculate entire terrain
+            Ogre::Rect rect;
+            rect.top = 0; rect.bottom = mSize;
+            rect.left = 0; rect.right = mSize;
+            calculateHeightDeltas(rect);
+            finaliseHeightDeltas(rect, true);
+
+            distributeVertexData();
+
+            if(mIsLoaded)
+            {
+                if (mQuadTree)
+                    mQuadTree->load();
+            }
+
+            mModified = true;
+        }
+    }
+};
+//-----------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------
 CTerrainPageEditor::CTerrainPageEditor(CBaseEditorFactory *factory) : CBaseEditor(factory),
 mPageX(0), mPageY(0), mFirstTimeInit(false), mExternalDataHandle(0), mPGModified(false)
@@ -81,7 +163,7 @@ mPageX(0), mPageY(0), mFirstTimeInit(false), mExternalDataHandle(0), mPGModified
     mPGLayerData[3] = 0;
     mPGDirtyRect.setNull();
 
-    for(int i = 0;i < 16;i++)
+    for(int i = 0;i < MAX_LAYERS_ALLOWED;i++)
     {
         mLayerWorldSize[i] = 0;
         mLayerDiffuse[i] = 0;
@@ -117,31 +199,33 @@ CTerrainPageEditor::~CTerrainPageEditor()
 void CTerrainPageEditor::_saveTerrain(Ogre::String pathPrefix)
 {
     Ogre::TerrainGroup *terGroup = static_cast<Ogre::TerrainGroup*>(mParentEditor->get()->getHandle());
-    Ogre::String filename = pathPrefix + terGroup->generateFilename(mPageX->get(), mPageY->get());
+    Ogre::String filename = mOgitorsRoot->GetProjectOptions()->ProjectDir + pathPrefix + terGroup->generateFilename(mPageX->get(), mPageY->get());
+
+    filename = OgitorsUtils::QualifyPath(filename);
 
     if(pathPrefix == "/Temp/tmp")
     {
-        mTempFileName = pathPrefix + Ogre::StringConverter::toString(mObjectID->get()) + ".ogt";
+        if(!mTempFileName.empty())
+            mSystem->DeleteFile(mTempFileName);
+        mTempFileName = mOgitorsRoot->GetProjectOptions()->ProjectDir + pathPrefix + Ogre::StringConverter::toString(mObjectID->get()) + ".ogt";
+        mTempFileName = OgitorsUtils::QualifyPath(mTempFileName);
         filename = mTempFileName;
     }
 
-    OFS::OFSHANDLE *fileHandle = new OFS::OFSHANDLE();
-
-    mOgitorsRoot->GetProjectFile()->createFile(*fileHandle, filename.c_str());
-
-    Ogre::DataStreamPtr stream = Ogre::DataStreamPtr(OGRE_NEW OfsDataStream(mOgitorsRoot->GetProjectFile(), fileHandle));
-    Ogre::DataStreamPtr compressStream(OGRE_NEW Ogre::DeflateStream(filename, stream));
-    Ogre::StreamSerialiser ser(compressStream);
-    mHandle->save(ser);
+    std::fstream fstr(filename.c_str(), std::ios::out|std::ios::binary);
+    Ogre::DataStreamPtr stream = Ogre::DataStreamPtr(OGRE_NEW Ogre::FileStreamDataStream(&fstr, false));
+    Ogre::StreamSerialiser ss(stream);
+    mHandle->save(ss);
 }
 //-----------------------------------------------------------------------------------------
 void CTerrainPageEditor::onSave(bool forced)
 {
+
     if(mHandle)
     {
         if(mHandle->isModified() || mTempModified->get() || forced)
         {
-            mOgitorsRoot->GetProjectFile()->deleteFile(mTempFileName.c_str());
+            mSystem->DeleteFile(mTempFileName);
             _saveTerrain("/Terrain/");
         }
     }
@@ -151,16 +235,20 @@ void CTerrainPageEditor::onSave(bool forced)
         Ogre::String filename = terGroup->generateFilename(mPageX->get(), mPageY->get());
 
         Ogre::String pathFrom = mTempFileName;
-        Ogre::String pathTo = "/Terrain/" + filename;
+        Ogre::String pathTo = mOgitorsRoot->GetProjectOptions()->ProjectDir + "/Terrain/" + filename;
 
-        mOgitorsRoot->GetProjectFile()->moveFile(pathFrom.c_str(), pathTo.c_str());
+        pathFrom = OgitorsUtils::QualifyPath(pathFrom);
+        pathTo = OgitorsUtils::QualifyPath(pathTo);
+        
+        mSystem->CopyFile(pathFrom, pathTo);
+        mSystem->DeleteFile(pathFrom);
     }
 
     if(mLoaded->get())
     {
         if(mPGModified || mTempDensityModified->get() || forced)
         {
-            mOgitorsRoot->GetProjectFile()->deleteFile(mTempDensityFileName.c_str());
+            mSystem->DeleteFile(mTempDensityFileName);
             _saveGrass("/Terrain/");
         }
     }
@@ -170,24 +258,28 @@ void CTerrainPageEditor::onSave(bool forced)
         Ogre::String filename = terGroup->generateFilename(mPageX->get(), mPageY->get());
 
         Ogre::String pathFrom = mTempDensityFileName;
-        Ogre::String pathTo = "/Terrain/" + filename.substr(0, filename.size() - 4) + "_density.tga";
+        Ogre::String pathTo = mOgitorsRoot->GetProjectOptions()->ProjectDir + "/Terrain/" + filename.substr(0, filename.size() - 4) + "_density.tga";
 
-        mOgitorsRoot->GetProjectFile()->moveFile(pathFrom.c_str(), pathTo.c_str());
+        pathFrom = OgitorsUtils::QualifyPath(pathFrom);
+        pathTo = OgitorsUtils::QualifyPath(pathTo);
+        
+        mSystem->CopyFile(pathFrom, pathTo);
+        mSystem->DeleteFile(pathFrom);
     }
 
     mTempModified->set(false);
     mTempDensityModified->set(false);
 }
 //-----------------------------------------------------------------------------------------
-Ogre::AxisAlignedBox CTerrainPageEditor::getAABB()
+Ogre::AxisAlignedBox CTerrainPageEditor::getAABB() 
 {
-    if(mHandle)
+    if(mHandle) 
         return mHandle->getWorldAABB();
-    else
+    else 
         return Ogre::AxisAlignedBox::BOX_NULL;
 }
 //-----------------------------------------------------------------------------------------
-bool CTerrainPageEditor::getObjectContextMenu(UTFStringVector &menuitems)
+bool CTerrainPageEditor::getObjectContextMenu(UTFStringVector &menuitems) 
 {
     menuitems.clear();
     menuitems.push_back(OTR("Remove Page"));
@@ -195,11 +287,9 @@ bool CTerrainPageEditor::getObjectContextMenu(UTFStringVector &menuitems)
     {
         menuitems.push_back(OTR("Re-Light"));
         menuitems.push_back(OTR("Calculate Blendmap"));
-        menuitems.push_back(OTR("Scale/Offset Height Values"));
         menuitems.push_back("-");
         menuitems.push_back(OTR("Import Heightmap"));
         menuitems.push_back(OTR("Export Heightmap"));
-        menuitems.push_back(OTR("Export Compositemap"));
         menuitems.push_back("-");
         menuitems.push_back(OTR("Import Blendmaps") +  Ogre::UTFString(" (RGB+A)"));
 
@@ -215,7 +305,7 @@ bool CTerrainPageEditor::getObjectContextMenu(UTFStringVector &menuitems)
     return true;
 }
 //-------------------------------------------------------------------------------
-void CTerrainPageEditor::onObjectContextMenu(int menuresult)
+void CTerrainPageEditor::onObjectContextMenu(int menuresult) 
 {
     if(menuresult == 0)
     {
@@ -251,39 +341,19 @@ void CTerrainPageEditor::onObjectContextMenu(int menuresult)
     }
     else if(menuresult == 3)
     {
-        Ogre::NameValuePairList params;
-
-        params["title"] = "Scale/Offset values";
-        params["input1"] = "Scale";
-        params["input2"] = "Offset";
-
-        if(!mSystem->DisplayImportHeightMapDialog(params))
-            return;
-
-        Ogre::Real fScale = Ogre::StringConverter::parseReal(params["input1"]);
-        Ogre::Real fOffset = Ogre::StringConverter::parseReal(params["input2"]);
-
-        _modifyHeights(fScale, fOffset);
+        importHeightMap();
     }
     else if(menuresult == 4)
     {
-        importHeightMap();
+        exportHeightMap();
     }
     else if(menuresult == 5)
     {
-        exportHeightMap();
-    }
-    else if(menuresult == 6)
-    {
-        exportCompositeMap();
-    }
-    else if(menuresult == 7)
-    {
         importBlendMap();
     }
-    else if(menuresult > 7)
+    else if(menuresult > 5)
     {
-        int lyID = menuresult - 7;
+        int lyID = menuresult - 5;
         importBlendMap(lyID);
     }
 }
@@ -323,10 +393,10 @@ bool CTerrainPageEditor::_setPosition(OgitorsPropertyBase* property, const Ogre:
     {
         mHandle->setPosition(position);
     }
-
+    
     if(mOgitorsRoot->GetPagingEditor())
         mOgitorsRoot->GetPagingEditor()->updateObjectPage(this);
-
+    
     return true;
 }
 //-----------------------------------------------------------------------------------------
@@ -436,7 +506,7 @@ int CTerrainPageEditor::_getLayerID(Ogre::String& texture, Ogre::String& normal,
             break;
         }
     }
-    if(id == -1)
+    if(id == -1) 
         return -1;
 
     int layerID = -1;
@@ -481,7 +551,7 @@ int CTerrainPageEditor::_getEmptyLayer()
 int CTerrainPageEditor::_createNewLayer(Ogre::String &texture,  Ogre::String& normal, Ogre::Real worldSize, bool donotuseempty)
 {
     int layerID = -1;
-
+    
     if(!donotuseempty)
     {
         layerID = _getEmptyLayer();
@@ -494,9 +564,7 @@ int CTerrainPageEditor::_createNewLayer(Ogre::String &texture,  Ogre::String& no
         }
     }
 
-    CTerrainGroupEditor *parentEditor = static_cast<CTerrainGroupEditor*>(mParentEditor->get());
-
-    if(mLayerCount->get() == parentEditor->getMaxLayersAllowed())
+    if(mLayerCount->get() == MAX_LAYERS_ALLOWED)
         return -1;
 
     layerID = mLayerCount->get();
@@ -508,8 +576,10 @@ int CTerrainPageEditor::_createNewLayer(Ogre::String &texture,  Ogre::String& no
 //-----------------------------------------------------------------------------------------
 void CTerrainPageEditor::_createLayer(int layerID, Ogre::String &texture,  Ogre::String& normal, Ogre::Real worldSize)
 {
-    OgitorsUndoManager::getSingletonPtr()->AddUndo(OGRE_NEW TerrainLayerUndo(mObjectID->get(), layerID, TerrainLayerUndo::LU_CREATE, texture, normal, worldSize));
+    assert(mLayerCount->get() < MAX_LAYERS_ALLOWED);
 
+    OgitorsUndoManager::getSingletonPtr()->AddUndo(OGRE_NEW TerrainLayerUndo(mObjectID->get(), layerID, TerrainLayerUndo::LU_CREATE, texture, normal, worldSize));
+    
     OgitorsUndoManager::getSingletonPtr()->BeginCollection("NULL");
 
     bool unload = !mLoaded->get();
@@ -527,9 +597,9 @@ void CTerrainPageEditor::_createLayer(int layerID, Ogre::String &texture,  Ogre:
 
     Ogre::String sCount2 = "layer" + Ogre::StringConverter::toString(mLayerCount->get());
 
-    PROPERTY_PTR(mLayerWorldSize[mLayerCount->get()], sCount2 + "::worldsize", Ogre::Real, worldSize, mLayerCount->get(), SETTER(Ogre::Real, CTerrainPageEditor, _setLayerWorldSize));
-    PROPERTY_PTR(mLayerDiffuse[mLayerCount->get()], sCount2 + "::diffusespecular", Ogre::String, "", mLayerCount->get(), SETTER(Ogre::String, CTerrainPageEditor, _setLayerDiffuseMap));
-    PROPERTY_PTR(mLayerNormal[mLayerCount->get()], sCount2 + "::normalheight", Ogre::String, "", mLayerCount->get(), SETTER(Ogre::String, CTerrainPageEditor, _setLayerNormalMap));
+    PROPERTY_PTR(mLayerWorldSize[mLayerCount->get()], sCount2 + "::worldsize", Ogre::Real, worldSize, mLayerCount->get(), SETTER(Ogre::Real, CTerrainPageEditor, _setLayerWorldSize)); 
+    PROPERTY_PTR(mLayerDiffuse[mLayerCount->get()], sCount2 + "::diffusespecular", Ogre::String, "", mLayerCount->get(), SETTER(Ogre::String, CTerrainPageEditor, _setLayerDiffuseMap)); 
+    PROPERTY_PTR(mLayerNormal[mLayerCount->get()], sCount2 + "::normalheight", Ogre::String, "", mLayerCount->get(), SETTER(Ogre::String, CTerrainPageEditor, _setLayerNormalMap)); 
 
     for(int i = mLayerCount->get();i > layerID;i--)
     {
@@ -541,10 +611,10 @@ void CTerrainPageEditor::_createLayer(int layerID, Ogre::String &texture,  Ogre:
     mLayerWorldSize[layerID]->initAndSignal(worldSize);
     mLayerDiffuse[layerID]->initAndSignal(texture);
     mLayerNormal[layerID]->initAndSignal(normal);
-
+    
     if(unload)
         unLoad();
-
+    
     mLayerCount->set(mLayerCount->get() + 1);
 
     OgitorsUndoManager::getSingletonPtr()->EndCollection(false, true);
@@ -575,7 +645,7 @@ void CTerrainPageEditor::_changeLayer(int layerID, Ogre::String &texture,  Ogre:
         unLoad();
 
     OgitorsUndoManager::getSingletonPtr()->EndCollection(false, true);
-
+    
     OgitorsUndoManager::getSingletonPtr()->AddUndo(undo);
 }
 //-----------------------------------------------------------------------------------------
@@ -612,7 +682,7 @@ void  CTerrainPageEditor::_deleteLayer(int layerID)
 
     if(unload)
         unLoad();
-
+    
     OgitorsUndoManager::getSingletonPtr()->EndCollection(false, true);
 
     OgitorsUndoManager::getSingletonPtr()->AddUndo(undo);
@@ -621,9 +691,9 @@ void  CTerrainPageEditor::_deleteLayer(int layerID)
 bool CTerrainPageEditor::_setMinBatchSize(OgitorsPropertyBase* property, const int& value)
 {
     bool loaded = mLoaded->get();
-
+    
     unLoad();
-
+    
     if(loaded)
         load();
     return true;
@@ -632,32 +702,52 @@ bool CTerrainPageEditor::_setMinBatchSize(OgitorsPropertyBase* property, const i
 bool CTerrainPageEditor::_setMaxBatchSize(OgitorsPropertyBase* property, const int& value)
 {
     bool loaded = mLoaded->get();
-
+    
     unLoad();
-
+    
     if(loaded)
         load();
     return true;
 }
 //-----------------------------------------------------------------------------------------
+void CTerrainPageEditor::setMapSize(int value)
+{
+    if(!mHandle || !mHandle->isLoaded())
+        return;
+
+    static_cast<OgreTerrainWorkaround*>(mHandle)->setTerrainMapSize(value);
+}
+//-----------------------------------------------------------------------------------------
+void CTerrainPageEditor::setWorldSize(Ogre::Real value)
+{
+    if(!mHandle || !mHandle->isLoaded())
+        return;
+
+    Ogre::Vector3 newpos;
+
+    CTerrainGroupEditor *parentEditor = static_cast<CTerrainGroupEditor*>(mParentEditor->get());
+    Ogre::TerrainGroup *terGroup = static_cast<Ogre::TerrainGroup*>(parentEditor->getHandle());
+
+    terGroup->convertTerrainSlotToWorldPosition(mPageX->get(), mPageY->get(), &newpos);
+    static_cast<OgreTerrainWorkaround*>(mHandle)->setTerrainWorldSize(value);
+    mPosition->set(newpos);
+}
+//-----------------------------------------------------------------------------------------
 void CTerrainPageEditor::_checkTerrainSizes()
 {
     CTerrainGroupEditor *parentEditor = static_cast<CTerrainGroupEditor*>(mParentEditor->get());
-
+    
     int mapsize = parentEditor->getMapSize();
     Ogre::Real worldsize = parentEditor->getWorldSize();
-
+    
     if(mHandle->getWorldSize() != worldsize)
     {
-        mHandle->setWorldSize(worldsize);
-        Ogre::Vector3 newpos;
-        static_cast<Ogre::TerrainGroup*>(parentEditor->getHandle())->convertTerrainSlotToWorldPosition(mPageX->get(), mPageY->get(), &newpos);
-        mPosition->set(newpos);
+        setWorldSize(worldsize);
     }
 
     if(mHandle->getSize() != mapsize)
     {
-        mHandle->setSize(mapsize);
+        setMapSize(mapsize);
     }
 }
 //-----------------------------------------------------------------------------------------
@@ -668,7 +758,7 @@ bool CTerrainPageEditor::update(float timePassed)
         unRegisterForUpdates();
         return false;
     }
-
+    
     if(mHandle->isLoaded())
     {
         _checkTerrainSizes();
@@ -679,7 +769,7 @@ bool CTerrainPageEditor::update(float timePassed)
 
         unRegisterForUpdates();
     }
-
+    
     return false;
 }
 //-----------------------------------------------------------------------------------------
@@ -690,10 +780,10 @@ bool CTerrainPageEditor::load(bool async)
 
     if(!getParent()->load())
         return false;
-
+    
     Ogre::TerrainGroup *terGroup = static_cast<Ogre::TerrainGroup*>(mParentEditor->get()->getHandle());
     CTerrainGroupEditor *parentEditor = static_cast<CTerrainGroupEditor*>(mParentEditor->get());
-
+        
     if(mFirstTimeInit)
     {
         Ogre::Terrain::ImportData imp;
@@ -740,7 +830,7 @@ bool CTerrainPageEditor::load(bool async)
         else
             terGroup->defineTerrain(mPageX->get(), mPageY->get());
     }
-
+    
     try
     {
         terGroup->loadTerrain(mPageX->get(), mPageY->get(), mFirstTimeInit || !async);
@@ -755,7 +845,7 @@ bool CTerrainPageEditor::load(bool async)
         Ogre::UTFString msg = "Failed to load page: ";
         msg = msg + terGroup->generateFilename(mPageX->get(), mPageY->get());
         mSystem->DisplayMessageDialog(msg, DLGTYPE_OK);
-
+ 
         return false;
     }
 
@@ -769,7 +859,7 @@ bool CTerrainPageEditor::load(bool async)
         int densize = parentEditor->getGrassDensityMapSize();
         Ogre::uchar *data = OGRE_ALLOC_T(Ogre::uchar, densize * densize * 4, Ogre::MEMCATEGORY_GENERAL);
         memset(data, 0, densize * densize * 4);
-
+        
         mPGDensityMap.loadDynamicImage(data, densize, densize, 1, Ogre::PF_A8R8G8B8, true);
 
         _saveTerrain("/Temp/tmp");
@@ -927,7 +1017,7 @@ bool CTerrainPageEditor::unLoad()
         return true;
 
     _notifyEndModification();
-
+    
     if(mHandle->isModified() && mOgitorsRoot->GetLoadState() != LS_UNLOADED)
     {
         mTempModified->set(true);
@@ -973,9 +1063,9 @@ void CTerrainPageEditor::createProperties(OgitorsPropertyValueMap &params)
     PROPERTY_PTR(mLayerCount, "layercount", int, 1, 0, 0);
     PROPERTY_PTR(mTempModified, "tempmodified", bool, false, 0, 0);
     PROPERTY_PTR(mTempDensityModified, "tempdensitymodified", bool, false, 0, 0);
-    PROPERTY_PTR(mLayerWorldSize[0], "layer0::worldsize", Ogre::Real, 100.0f, 0, SETTER(Ogre::Real, CTerrainPageEditor, _setLayerWorldSize));
-    PROPERTY_PTR(mLayerDiffuse[0], "layer0::diffusespecular", Ogre::String, "dirt_grayrocky_diffusespecular.dds", 0, SETTER(Ogre::String, CTerrainPageEditor, _setLayerDiffuseMap));
-    PROPERTY_PTR(mLayerNormal[0], "layer0::normalheight", Ogre::String, "dirt_grayrocky_normalheight.dds", 0, SETTER(Ogre::String, CTerrainPageEditor, _setLayerNormalMap));
+    PROPERTY_PTR(mLayerWorldSize[0], "layer0::worldsize", Ogre::Real, 100.0f, 0, SETTER(Ogre::Real, CTerrainPageEditor, _setLayerWorldSize)); 
+    PROPERTY_PTR(mLayerDiffuse[0], "layer0::diffusespecular", Ogre::String, "dirt_grayrocky_diffusespecular.dds", 0, SETTER(Ogre::String, CTerrainPageEditor, _setLayerDiffuseMap)); 
+    PROPERTY_PTR(mLayerNormal[0], "layer0::normalheight", Ogre::String, "dirt_grayrocky_normalheight.dds", 0, SETTER(Ogre::String, CTerrainPageEditor, _setLayerNormalMap)); 
 
     int count = 0;
     OgitorsPropertyValueMap::const_iterator it = params.find("layercount");
@@ -985,9 +1075,9 @@ void CTerrainPageEditor::createProperties(OgitorsPropertyValueMap &params)
     for(int i = 1;i < count;i++)
     {
         Ogre::String propStr1 = "layer" + Ogre::StringConverter::toString(i);
-        PROPERTY_PTR(mLayerWorldSize[i], propStr1 + "::worldsize", Ogre::Real, 0, i, SETTER(Ogre::Real, CTerrainPageEditor, _setLayerWorldSize));
-        PROPERTY_PTR(mLayerDiffuse[i], propStr1 + "::diffusespecular", Ogre::String, "", i, SETTER(Ogre::String, CTerrainPageEditor, _setLayerDiffuseMap));
-        PROPERTY_PTR(mLayerNormal[i], propStr1 + "::normalheight", Ogre::String, "", i, SETTER(Ogre::String, CTerrainPageEditor, _setLayerNormalMap));
+        PROPERTY_PTR(mLayerWorldSize[i], propStr1 + "::worldsize", Ogre::Real, 0, i, SETTER(Ogre::Real, CTerrainPageEditor, _setLayerWorldSize)); 
+        PROPERTY_PTR(mLayerDiffuse[i], propStr1 + "::diffusespecular", Ogre::String, "", i, SETTER(Ogre::String, CTerrainPageEditor, _setLayerDiffuseMap)); 
+        PROPERTY_PTR(mLayerNormal[i], propStr1 + "::normalheight", Ogre::String, "", i, SETTER(Ogre::String, CTerrainPageEditor, _setLayerNormalMap)); 
     }
 
     Ogre::Vector2 v1(1,1);
@@ -1009,7 +1099,7 @@ void CTerrainPageEditor::createProperties(OgitorsPropertyValueMap &params)
         PROPERTY_PTR(mPGFadeTech[i]        , label + "::fadetech"        , int          , ftech, i, SETTER(int, CTerrainPageEditor, _setPGFadeTech));
         PROPERTY_PTR(mPGGrassTech[i]       , label + "::grasstech"       , int          , gtech, i, SETTER(int, CTerrainPageEditor, _setPGGrassTech));
     }
-
+    
     mProperties.initValueMap(params);
 }
 //-----------------------------------------------------------------------------------------
@@ -1024,12 +1114,12 @@ void CTerrainPageEditor::_notifyModification(int layerID, const Ogre::Rect& dirt
         {
             if(!(mPGActive[0]->get() || mPGActive[1]->get() || mPGActive[2]->get() || mPGActive[3]->get()))
                 return;
-
+            
             CTerrainGroupEditor *parentEditor = static_cast<CTerrainGroupEditor*>(mParentEditor->get());
 
             size_t mapsize = parentEditor->getGrassDensityMapSize() * parentEditor->getGrassDensityMapSize();
             mGrassSave = OGRE_ALLOC_T(float, mapsize * 4, Ogre::MEMCATEGORY_RESOURCE);
-
+ 
             int pos = 0;
 
             for(int i = 0;i < 4;i++)
@@ -1089,7 +1179,7 @@ void CTerrainPageEditor::_notifyModification(int layerID, const Ogre::Rect& dirt
 
             size_t mapsize = mHandle->getLayerBlendMapSize() * mHandle->getLayerBlendMapSize();
             mBlendSave = OGRE_ALLOC_T(float, mapsize * numlayers, Ogre::MEMCATEGORY_RESOURCE);
-
+ 
             int pos = 0;
 
             for(int i = layerID;i < mLayerCount->get();i++)
@@ -1116,7 +1206,7 @@ void CTerrainPageEditor::_notifyEndModification()
     if(mHeightSave)
     {
         unsigned int size = mHeightDirtyRect.width() * mHeightDirtyRect.height();
-
+        
         if(size)
         {
             float *data = OGRE_ALLOC_T(float, size, Ogre::MEMCATEGORY_RESOURCE);
@@ -1139,11 +1229,11 @@ void CTerrainPageEditor::_notifyEndModification()
         mHeightSave = 0;
         mHeightDirtyRect = Ogre::Rect(0,0,0,0);
     }
-
+    
     if(mBlendSave)
     {
         unsigned int size = mBlendMapDirtyRect.width() * mBlendMapDirtyRect.height() * mBlendSaveCount;
-
+        
         if(size)
         {
             float *data = OGRE_ALLOC_T(float, size, Ogre::MEMCATEGORY_RESOURCE);
@@ -1178,7 +1268,7 @@ void CTerrainPageEditor::_notifyEndModification()
     if(mGrassSave)
     {
         unsigned int size = mGrassMapDirtyRect.width() * mGrassMapDirtyRect.height() * 4;
-
+        
         if(size)
         {
             float *data = OGRE_ALLOC_T(float, size, Ogre::MEMCATEGORY_RESOURCE);
@@ -1214,7 +1304,7 @@ void CTerrainPageEditor::_notifyEndModification()
     if(mColourSave && mColourMapEnabled->get())
     {
         unsigned int size = mColourMapDirtyRect.width() * mColourMapDirtyRect.height();
-
+        
         if(size)
         {
             Ogre::ColourValue *data = OGRE_ALLOC_T(Ogre::ColourValue, size, Ogre::MEMCATEGORY_RESOURCE);
@@ -1250,7 +1340,7 @@ void CTerrainPageEditor::_swapHeights(Ogre::Rect rect, float *data)
 
     float *hdata = mHandle->getHeightData();
     int rowSize = mHandle->getSize();
-
+    
     int pos = 0;
     for(int y = rect.top;y < rect.bottom;y++)
     {
@@ -1277,7 +1367,7 @@ void CTerrainPageEditor::_swapHeights(Ogre::Rect rect, float *data)
     dirty.right = mHandle->getPosition().x + (rect.right * ratio) - halfSize;
     dirty.top = mHandle->getPosition().z + ((mHandle->getSize() - rect.top) * ratio) - halfSize;
     dirty.bottom = mHandle->getPosition().z + ((mHandle->getSize() - rect.bottom) * ratio) - halfSize;
-
+    
     _refreshGrassGeometry(&dirty);
 
     if(unload)
@@ -1293,9 +1383,9 @@ void CTerrainPageEditor::_swapBlends(int layerStart, int layerCount, Ogre::Rect 
 
     int rowSize = mHandle->getLayerBlendMapSize();
     int mapSize = rowSize * rowSize;
-
+    
     int pos = 0;
-
+    
     for(int c = 0;c < layerCount;c++)
     {
         Ogre::TerrainLayerBlendMap *blendmap = mHandle->getLayerBlendMap(c + layerStart);
@@ -1335,7 +1425,7 @@ void CTerrainPageEditor::_swapColours(Ogre::Rect rect, Ogre::ColourValue *data)
     Ogre::ColourValue colVal;
 
     int pos = 0;
-
+    
     for(int y = rect.top;y < rect.bottom;y++)
     {
         for(int x = rect.left;x < rect.right;x++)
@@ -1364,9 +1454,9 @@ void CTerrainPageEditor::_swapGrass(Ogre::Rect rect, float *data)
 
     int rowSize = parentEditor->getGrassDensityMapSize();
     int mapSize = rowSize * rowSize;
-
+    
     int pos = 0;
-
+    
     for(int c = 0;c < 4;c++)
     {
         float *hdata = getGrassPointer(c);
@@ -1387,51 +1477,13 @@ void CTerrainPageEditor::_swapGrass(Ogre::Rect rect, float *data)
                 ++pos;
             }
         }
-
+        
         dirtyGrassRect(rect);
         updateGrassLayer(c);
     }
 
     if(unload)
         unLoad();
-}
-//-----------------------------------------------------------------------------------------
-void CTerrainPageEditor::_modifyHeights(float scale, float offset)
-{
-    bool unload = !mLoaded->get();
-    load(false);
-
-    OgitorsUndoManager::getSingletonPtr()->BeginCollection("Modify Height Values");
-
-    Ogre::Rect rect(0,0,mHandle->getSize(), mHandle->getSize());
-    _notifyModification(-1, rect);
-    _notifyEndModification();
-
-    float *data = mHandle->getHeightData();
-    int numvertexes = mHandle->getSize() * mHandle->getSize();
-
-    for(int px = 0;px < numvertexes;px++)
-    {
-        float val = (data[px] * scale) + offset;
-        data[px] = val;
-    }
-
-    mHandle->dirtyRect(rect);
-    mHandle->update();
-    
-    OgitorsUndoManager::getSingletonPtr()->EndCollection(true);
-
-    mOgitorsRoot->SetSceneModified(true);
-
-    if(unload)
-        unLoad();
-    else
-    {
-        Ogre::AxisAlignedBox bBox = mHandle->getWorldAABB();
-        Ogre::Rect dirty(bBox.getMinimum().x, bBox.getMinimum().z, bBox.getMaximum().x, bBox.getMaximum().z);
-
-        _refreshGrassGeometry(&dirty);
-    }
 }
 //-----------------------------------------------------------------------------------------
 
@@ -1526,7 +1578,7 @@ CBaseEditor *CTerrainPageEditorFactory::CreateObject(CBaseEditor **parent, Ogito
         return 0;
 
     *parent = manager;
-
+    
     CTerrainPageEditor *object = OGRE_NEW CTerrainPageEditor(this);
 
     OgitorsPropertyValueMap::iterator ni;

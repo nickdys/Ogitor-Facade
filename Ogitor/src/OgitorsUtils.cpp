@@ -33,10 +33,8 @@
 #include "OgitorsPrerequisites.h"
 #include "BaseEditor.h"
 #include "OgitorsRoot.h"
-#include "OgitorsSystem.h"
 #include "SceneManagerEditor.h"
 #include "tinyxml.h"
-#include "ofs.h"
 
 using namespace Ogitors;
 
@@ -593,9 +591,6 @@ bool OgitorsUtils::PickEntity(Ogre::Ray &ray, Ogre::Entity **result, Ogre::Vecto
             if(!pentity->getVisible() || (pentity->getName() == excludeobject)) 
                 continue;
 
-			if(pentity->getName() == "SkyXMeshEnt")
-				continue;
-
             // mesh data to retrieve
             size_t vertex_count;
             size_t index_count;
@@ -1119,7 +1114,7 @@ Ogre::String OgitorsUtils::GetObjectSaveStringV2(CBaseEditor *object, int indent
     }
     outStr += " name=\"" + object->getName() + "\"";
     outStr += " typename=\"" + object->getTypeName() + "\"";
-    // If Object's parent name is "" then the parent is mRootEditor
+    /// If Object's parent name is "" then the parent is mRootEditor
     if(object->getParent()->getName() != "" && addparent)
     {
         outStr += " parentnode=\"" + object->getParent()->getName() + "\"";
@@ -1146,175 +1141,5 @@ Ogre::String OgitorsUtils::GetObjectSaveStringV2(CBaseEditor *object, int indent
     outStr += GetCustomPropertySaveString(object->getCustomProperties(), indentation + 2).c_str();
     outStr += indentStr + "</OBJECT>\n";
     return outStr;
-}
-//----------------------------------------------------------------------------------------
-bool OgitorsUtils::SaveImageOfs(Ogre::Image& image, Ogre::String filename)
-{
-    int dotpos = filename.find_last_of(".");
-    Ogre::String extension = filename.substr(dotpos, filename.length() - dotpos);
-    extension.erase(0,1);
-
-    Ogre::DataStreamPtr imgDataPtr = image.encode(extension);
-
-    OFS::OfsPtr& mFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-
-    unsigned int file_size = imgDataPtr->size();
-    
-    char *data = new char[file_size];
-
-    imgDataPtr->seek(0);
-    imgDataPtr->read(data, file_size);
-
-    OFS::OFSHANDLE handle;
-
-    try
-    {
-        mFile->createFile(handle, filename.c_str(), file_size, file_size, data);
-        mFile->closeFile(handle);
-    }
-    catch(...)
-    {
-        delete [] data;
-        return false;
-    }
-
-    delete [] data;
-
-    return true;
-}
-//----------------------------------------------------------------------------------------
-bool OgitorsUtils::SaveStreamOfs(std::stringstream& stream, Ogre::String filename)
-{
-        OFS::OFSHANDLE handle;
-
-        OFS::OfsPtr& mFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-
-        unsigned int file_size = stream.str().size();
-
-        OFS::OfsResult ret = mFile->createFile(handle, filename.c_str(), file_size, file_size, stream.str().c_str());
-
-        if(ret != OFS::OFS_OK)
-            return false;
-        
-        mFile->closeFile(handle);
-
-        return true;
-}
-//----------------------------------------------------------------------------------------
-#define MAX_BUFFER_SIZE (16 * 1024 * 1024)
-
-bool OgitorsUtils::CopyDirOfs(Ogre::String dirpath, Ogre::String ofs_path)
-{
-    OFS::OfsPtr& mFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-
-    OFS::OFSHANDLE fhandle;
-
-    dirpath = QualifyPath(dirpath);
-
-    Ogre::StringVector filelist;
-
-    OgitorsSystem::getSingletonPtr()->GetFileList(dirpath + "/*.*", filelist);
-
-    char *tmp_buffer = new char[MAX_BUFFER_SIZE];
-
-    for(unsigned int i = 0;i < filelist.size();i++)
-    {
-        Ogre::String path = filelist[i];
-        Ogre::String file_ofs_path = ofs_path + ExtractFileName(filelist[i]);
-            
-        std::ifstream stream;
-        stream.open(path.c_str(), std::fstream::in | std::fstream::binary);
-            
-        if(stream.is_open())
-        {
-            stream.seekg(0, std::fstream::end);
-            unsigned int stream_size = stream.tellg();
-
-            stream.seekg(0, std::fstream::beg);
- 
-            if(stream_size >= MAX_BUFFER_SIZE)
-            {
-                // CreateFile accepts initial data to be written during allocation
-                // It's an optimization, that's why we don't have to call Ofs:write after createFile
-                stream.read(tmp_buffer, MAX_BUFFER_SIZE);
-                try
-                {
-                    if(mFile->createFile(fhandle, file_ofs_path.c_str(), MAX_BUFFER_SIZE, MAX_BUFFER_SIZE, tmp_buffer) != OFS::OFS_OK)
-                    {
-                        stream.close();
-                        continue;
-                    }
-
-                    stream_size -= MAX_BUFFER_SIZE;
-                }
-                catch(OFS::Exception&)
-                {
-                    stream.close();
-                    continue;
-                }
-
-                try
-                {
-                    while(stream_size > 0)
-                    {
-                        if(stream_size >= MAX_BUFFER_SIZE)
-                        {
-                            stream.read(tmp_buffer, MAX_BUFFER_SIZE);
-                            mFile->write(fhandle, tmp_buffer, MAX_BUFFER_SIZE);
-                            stream_size -= MAX_BUFFER_SIZE;
-                        }
-                        else
-                        {
-                            stream.read(tmp_buffer, stream_size);
-                            mFile->write(fhandle, tmp_buffer, stream_size);
-                            stream_size = 0;
-                        }
-                    }
-                }
-                catch(OFS::Exception&)
-                {
-                }
-
-                stream.close();
-                mFile->closeFile(fhandle);
-            }
-            else
-            {
-                stream.read(tmp_buffer, stream_size);
-
-                try
-                {
-                    // CreateFile accepts initial data to be written during allocation
-                    // It's an optimization, that's why we don't have to call Ofs:write after createFile
-                    if(mFile->createFile(fhandle, file_ofs_path.c_str(), stream_size, stream_size, tmp_buffer) != OFS::OFS_OK)
-                    {
-                        stream.close();
-                        continue;
-                    }
-                }
-                catch(OFS::Exception&)
-                {
-                }
-
-                stream.close();
-                mFile->closeFile(fhandle);
-            }
-        }
-    }
-
-    delete [] tmp_buffer;
-
-    filelist.clear();
-
-    OgitorsSystem::getSingletonPtr()->GetDirList(dirpath + "/", filelist);
-
-    for(unsigned int i = 0;i < filelist.size();i++)
-    {
-        Ogre::String dir_name = ofs_path + filelist[i] + "/"; 
-        mFile->createDirectory(dir_name.c_str());
-        CopyDirOfs(dirpath + "/" + filelist[i], dir_name);
-    }
-
-    return true;
 }
 //----------------------------------------------------------------------------------------

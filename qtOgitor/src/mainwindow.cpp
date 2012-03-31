@@ -29,7 +29,6 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////*/
-
 #include "mainwindow.hxx"
 
 #include "Ogitors.h"
@@ -52,13 +51,11 @@
 #include "preferencesmanager.hxx"
 #include "lineeditwithhistory.hxx"
 #include "terraintoolswidget.hxx"
-#include "generictexteditor.hxx"
-#include "projectfilesview.hxx"
-#include "genericimageeditor.hxx"
 
 #if OGRE_MEMORY_TRACKER
 #include "OgreMemoryTracker.h"
 #endif
+
 
 MainWindow *mOgitorMainWindow = 0;
 int FPSLIST[12] = {1000,200,100,50,33,25,20,10,5,3,2,1};
@@ -154,17 +151,10 @@ bool OgitorAssistant::startOgitorAssistant()
 #endif
 
         QStringList args;
-#if defined(Q_WS_X11)
-        args << QLatin1String("-collectionFile")
-        << QLatin1String("/usr/share/qtOgitor")
-        + QLatin1String("/Help/collection_ogitor.qhc")
-        << QLatin1String("-enableRemoteControl");
-#else
         args << QLatin1String("-collectionFile")
         << QLatin1String(Ogitors::OgitorsUtils::GetExePath().c_str())
         + QLatin1String("/Help/collection_ogitor.qhc")
         << QLatin1String("-enableRemoteControl");
-#endif
 
         proc->start(app, args);
 
@@ -189,7 +179,7 @@ MainWindow::MainWindow(QString args, QWidget *parent)
     actAddScriptToToolbar = 0;
 
     mTargetRenderCount = 30;
-
+    
     recentMapper = 0;
 
     setMinimumSize(400,300);
@@ -222,9 +212,9 @@ MainWindow::MainWindow(QString args, QWidget *parent)
     createHomeTab();
     //createMacHomeTab();
 
-    createScriptActionsToolbar();
+    //createScriptActionsToolbar();
 
-    createPlayerToolbar();
+    //createPlayerToolbar();
 
     createCustomToolbars();
 
@@ -239,18 +229,6 @@ MainWindow::MainWindow(QString args, QWidget *parent)
     mEditorTab->setObjectName("editortab");
 
     createSceneRenderWindow();
-
-    QMainWindow *mw = new QMainWindow(mEditorTab);
-
-    mGenericTextEditor = new GenericTextEditor("GenericTextEditor", mw);
-    mGenericTextEditor->setAllowDoubleDisplay(false);
-    mEditorTab->addTab(mw, tr("Generic Text Editor"));
-
-    mw->setCentralWidget(mGenericTextEditor);
-
-    mGenericImageEditor = new GenericImageEditor("GenericImageEditor", mEditorTab);
-    mGenericImageEditor->setAllowDoubleDisplay(false);
-    mEditorTab->addTab(mGenericImageEditor, tr("Image Editor"));
 
     createCustomTabWindows();
 
@@ -267,10 +245,6 @@ MainWindow::MainWindow(QString args, QWidget *parent)
     connect(mTimer, SIGNAL(timeout()), this, SLOT(timerLoop()));
     mTimer->start();
 
-    mAutoBackupTimer = new QTimer(this);
-    connect(mAutoBackupTimer, SIGNAL(timeout()), this, SLOT(autoSaveScene()));
-    mAutoBackupTimer->stop();
-
     mPrefManager = new PreferencesManager(this);
 
     mOgitorAssistant = new OgitorAssistant;
@@ -285,27 +259,27 @@ MainWindow::MainWindow(QString args, QWidget *parent)
     hideSubWindows();
 #endif
 
-    EventManager::getSingletonPtr()->connectEvent(EventManager::MODIFIED_STATE_CHANGE,      this, true, 0, true, 0, EVENT_CALLBACK(MainWindow, onSceneModifiedChange));
-    EventManager::getSingletonPtr()->connectEvent(EventManager::UNDOMANAGER_NOTIFICATION,   this, true, 0, true, 0, EVENT_CALLBACK(MainWindow, onUndoManagerNotification));
-    EventManager::getSingletonPtr()->connectEvent(EventManager::RUN_STATE_CHANGE,           this, true, 0, true, 0, EVENT_CALLBACK(MainWindow, onSceneRunStateChange));
-    EventManager::getSingletonPtr()->connectEvent(EventManager::EDITOR_TOOL_CHANGE,         this, true, 0, true, 0, EVENT_CALLBACK(MainWindow, onSceneEditorToolChange));
-    EventManager::getSingletonPtr()->connectEvent(EventManager::TERRAIN_EDITOR_CHANGE,      this, true, 0, true, 0, EVENT_CALLBACK(MainWindow, onTerrainEditorChange));
+    EventManager::Instance()->connectEvent("modified_state_change", this, true, 0, true, 0, EVENT_CALLBACK(MainWindow, onSceneModifiedChange));
+    EventManager::Instance()->connectEvent("undomanager_notification", this, true, 0, true, 0, EVENT_CALLBACK(MainWindow, onUndoManagerNotification));
+    EventManager::Instance()->connectEvent("run_state_change", this, true, 0, true, 0, EVENT_CALLBACK(MainWindow, onSceneRunStateChange));
+    EventManager::Instance()->connectEvent("editor_tool_change", this, true, 0, true, 0, EVENT_CALLBACK(MainWindow, onSceneEditorToolChange));
+    EventManager::Instance()->connectEvent("terrain_editor_change", this, true, 0, true, 0, EVENT_CALLBACK(MainWindow, onTerrainEditorChange));
 }
 //------------------------------------------------------------------------------
 MainWindow::~MainWindow()
 {
-    EventManager::getSingletonPtr()->disconnectEvent(EventManager::MODIFIED_STATE_CHANGE,       this);
-    EventManager::getSingletonPtr()->disconnectEvent(EventManager::UNDOMANAGER_NOTIFICATION,    this);
-    EventManager::getSingletonPtr()->disconnectEvent(EventManager::RUN_STATE_CHANGE,            this);
-    EventManager::getSingletonPtr()->disconnectEvent(EventManager::EDITOR_TOOL_CHANGE,          this);
-    EventManager::getSingletonPtr()->disconnectEvent(EventManager::TERRAIN_EDITOR_CHANGE,       this);
+    EventManager::Instance()->disconnectEvent("modified_state_change", this);
+    EventManager::Instance()->disconnectEvent("undomanager_notification", this);
+    EventManager::Instance()->disconnectEvent("run_state_change", this);
+    EventManager::Instance()->disconnectEvent("editor_tool_change", this);
+    EventManager::Instance()->disconnectEvent("terrain_editor_change", this);
 
     delete mTerrainToolsWidget;
     delete mTimer;
 }
 //------------------------------------------------------------------------------
-void MainWindow::setApplicationObject(QObject *obj)
-{
+void MainWindow::setApplicationObject(QObject *obj) 
+{ 
     mApplicationObject = obj;
     mAppActive = true;
     obj->installEventFilter(this);
@@ -333,7 +307,7 @@ void MainWindow::initHiddenRenderWindow()
 #endif
 
 #if defined(Q_WS_MAC)
-    hiddenParams["macAPICocoaUseNSView"] = "true";
+    hiddenParams["macAPICocoaUseNSView"] = "true";   
     hiddenParams["macAPI"] = "cocoa";
 #endif
 
@@ -400,8 +374,8 @@ void MainWindow::hideSubWindows()
             QString objName = widget->objectName();
             // Check if the widget is a dockwidget and if its not already defined as hidden
             // Qt defines widget attribute WA_WState_Hidden if a widget will be created but not displayed on screen
-            // restoreLayout also restores this attribute, so we get the correct state,
-            // testing this attribute instead of isVisible() since isVisible will always
+            // restoreLayout also restores this attribute, so we get the correct state, 
+            // testing this attribute instead of isVisible() since isVisible will always 
             // incorrectly return false when the window is first created but not updated yet...
             if(objName.endsWith("DockWidget", Qt::CaseInsensitive) && !widget->testAttribute(Qt::WA_WState_Hidden))
             {
@@ -502,7 +476,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     if(OgitorsRoot::getSingletonPtr()->TerminateScene())
     {
         delete mOgitorAssistant;
-
+        
         Ogre::LogManager::getSingleton().getDefaultLog()->removeListener(this);
 
         if(actFullScreen->isChecked())
@@ -519,8 +493,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
         showSubWindows();
 
         writeSettings();
-
-        event->setAccepted(true);
+        
+        event->setAccepted(true);    
     }
     else
     {
@@ -532,14 +506,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::retranslateUi()
 {
     QString appTitle = "qtOgitor ";
-    appTitle += Ogitors::OGITOR_VERSION;
+    appTitle += Ogitors::OGITOR_VERSION;    
     setWindowTitle(appTitle);
     explorerDockWidget->setWindowTitle(QApplication::translate("MainWindow", "Explorer", 0, QApplication::UnicodeUTF8));
     layerDockWidget->setWindowTitle(QApplication::translate("MainWindow", "Groups", 0, QApplication::UnicodeUTF8));
     resourcesDockWidget->setWindowTitle(QApplication::translate("MainWindow", "Resources", 0, QApplication::UnicodeUTF8));
     propertiesDockWidget->setWindowTitle(QApplication::translate("MainWindow", "Properties", 0, QApplication::UnicodeUTF8));
     toolsDockWidget->setWindowTitle(QApplication::translate("MainWindow", "Tools", 0, QApplication::UnicodeUTF8));
-    projectFilesDockWidget->setWindowTitle(QApplication::translate("MainWindow", "Files", 0, QApplication::UnicodeUTF8));
     menuFile->setTitle(QApplication::translate("MainWindow", "File", 0, QApplication::UnicodeUTF8));
 }
 //------------------------------------------------------------------------------
@@ -578,15 +551,12 @@ void MainWindow::addDockWidgets(QMainWindow* parent)
 
     mObjectsViewWidget = new ObjectsViewWidget(parent);
     mEntityViewWidget = new EntityViewWidget(parent);
-    mEntityViewWidget->setObjectName(QString::fromUtf8("entityViewWidget"));
     mTemplatesViewWidget = new TemplateViewWidget(parent);
-    mProjectFilesViewWidget = new ProjectFilesViewWidget(parent);
-
     mResourcesToolBox = new QToolBox(parent);
     mResourcesToolBox->addItem(mObjectsViewWidget, QIcon(":/icons/objects.svg"), tr("Objects"));
     mResourcesToolBox->addItem(mEntityViewWidget, QIcon(":/icons/entity.svg"), tr("Meshes"));
     mResourcesToolBox->addItem(mTemplatesViewWidget, QIcon(":/icons/template.svg"), tr("Templates"));
-
+    
     resourcesDockWidget = new QDockWidget(parent);
     resourcesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea);
     resourcesDockWidget->setObjectName(QString::fromUtf8("resourcesDockWidget"));
@@ -598,16 +568,9 @@ void MainWindow::addDockWidgets(QMainWindow* parent)
     toolsDockWidget->setObjectName(QString::fromUtf8("toolsDockWidget"));
     parent->addDockWidget(static_cast<Qt::DockWidgetArea>(2), toolsDockWidget);
 
-    projectFilesDockWidget = new QDockWidget(parent);
-    projectFilesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea);
-    projectFilesDockWidget->setObjectName(QString::fromUtf8("projectFilesDockWidget"));
-    projectFilesDockWidget->setWidget(mProjectFilesViewWidget);
-    parent->addDockWidget(static_cast<Qt::DockWidgetArea>(1), projectFilesDockWidget);
-
     parent->tabifyDockWidget(propertiesDockWidget, resourcesDockWidget);
     parent->tabifyDockWidget(propertiesDockWidget, toolsDockWidget);
     parent->tabifyDockWidget(explorerDockWidget, layerDockWidget);
-    parent->tabifyDockWidget(explorerDockWidget, projectFilesDockWidget);
     propertiesDockWidget->raise();
     explorerDockWidget->raise();
 
@@ -673,7 +636,7 @@ void MainWindow::createSceneRenderWindow()
     renderWindowToolBar->addWidget(snapLabel);
     renderWindowToolBar->addWidget(mSnapMultiplierBox);
     renderWindowToolBar->addSeparator();
-
+    
     QSignalMapper *cameraMapper = new QSignalMapper(this);
     menuCameraPositionMain = new QMenu(this);
     menuCameraPositionMain->setIcon(QIcon(":/icons/camera.svg"));
@@ -684,12 +647,12 @@ void MainWindow::createSceneRenderWindow()
     mCameraSpeedSlider->setTickInterval(5);
     mCameraSpeedSlider->setTickPosition(QSlider::TicksBelow);
     mCameraSpeedSlider->setMaximumWidth(100);
-
+    
     QWidgetAction * sliderActionWidget = new QWidgetAction( this );
     sliderActionWidget->setDefaultWidget( mCameraSpeedSlider );
     sliderActionWidget->setText(tr("Camera Speed"));
     menuCameraPositionMain->addAction(sliderActionWidget);
-
+    
     menuCameraPositionMain->addSeparator();
     for(unsigned int i = 0;i < 10;i++)
     {
@@ -851,7 +814,7 @@ void MainWindow::createCustomToolbars()
 void MainWindow::createCustomDockWidgets()
 {
     Ogitors::DockWidgetDataList dockwidgets = OgitorsRoot::getSingletonPtr()->GetDockWidgets();
-
+    
     for(unsigned int i = 0;i < dockwidgets.size();i++)
     {
         if(dockwidgets[i].mParent == Ogitors::DOCK_MAIN)
@@ -912,7 +875,7 @@ void MainWindow::createCustomDockWidgets()
 void MainWindow::createCustomTabWindows()
 {
     Ogitors::TabWidgetDataList tabwidgets = OgitorsRoot::getSingletonPtr()->GetTabWidgets();
-
+    
     for(unsigned int i = 0;i < tabwidgets.size();i++)
     {
         QWidget *widget = static_cast<QWidget*>(tabwidgets[i].mHandle);
@@ -1028,7 +991,6 @@ void MainWindow::addMenus()
     menuView->setObjectName(QString::fromUtf8("menuView"));
     mMenuBar->addAction(menuView->menuAction());
     menuView->addAction(actToggleExplorer);
-    menuView->addAction(actToggleProjectFiles);
     menuView->addAction(actToggleLayer);
     menuView->addAction(actToggleProperties);
     menuView->addAction(actToggleTools);
@@ -1067,7 +1029,7 @@ void MainWindow::addMenus()
     menuView->addSeparator();
     menuCamera->addAction(actCamSpeedPlus);
     menuCamera->addAction(actCamSpeedMinus);
-
+   
     menuTerrainTools = new QMenu(tr("Terrain Tools"), mMenuBar);
     menuTerrainTools->setObjectName(QString::fromUtf8("menuTerrainTools"));
     mMenuBar->addAction(menuTerrainTools->menuAction());
@@ -1092,6 +1054,7 @@ void MainWindow::setupStatusBar()
 {
     mStatusBar = new QStatusBar(this);
     mStatusBar->setObjectName(QString::fromUtf8("mStatusBar"));
+    mStatusBar->setStyleSheet("QStatusBar { border: 1px solid #C8C8C8; }");
     setStatusBar(mStatusBar);
 
     mFPSLabel = new QLabel(tr("FPS : "));
@@ -1126,17 +1089,19 @@ void MainWindow::setupStatusBar()
     mCamPosToolBar->addSeparator();
     mCamPosToolBar->addWidget(mFPSSliderLabel);
     mCamPosToolBar->addWidget(mFPSSlider);
+    mCamPosToolBar->setStyleSheet("QToolBar { border: none; }");
 
     mStatusViewToolBar = new QToolBar();
     mStatusViewToolBar->setIconSize(QSize(16, 16));
+    mStatusViewToolBar->setStyleSheet("QToolBar { border: none; }");
     mStatusViewToolBar->addAction(actToggleGrid);
     mStatusViewToolBar->addAction(actFullScreen);
     mStatusViewToolBar->addAction(actSuperFullScreen);
 
     mStatusShowHideToolBar = new QToolBar();
     mStatusShowHideToolBar->setIconSize(QSize(16, 16));
+    mStatusShowHideToolBar->setStyleSheet("QToolBar { border: none; }");
     mStatusShowHideToolBar->addAction(actToggleExplorer);
-    mStatusShowHideToolBar->addAction(actToggleProjectFiles);
     mStatusShowHideToolBar->addAction(actToggleLayer);
     mStatusShowHideToolBar->addAction(actToggleProperties);
     mStatusShowHideToolBar->addAction(actToggleTools);
@@ -1162,11 +1127,6 @@ void MainWindow::messageLogged(const Ogre::String &message, Ogre::LogMessageLeve
     LOGBUFFER.append(lml, message);
 }
 //------------------------------------------------------------------------------
-void MainWindow::messageLogged(const Ogre::String &message, Ogre::LogMessageLevel lml, bool maskDebug, const Ogre::String &logName, bool &skipThisMessage)
-{
-    LOGBUFFER.append(lml, message);
-}
-//------------------------------------------------------------------------------
 void MainWindow::setupLog()
 {
     logDockWidget = new QDockWidget(this);
@@ -1180,38 +1140,40 @@ void MainWindow::setupLog()
     logWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
     logWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
     logWidget->setWordWrap(true);
+    logWidget->setStyleSheet("QListWidget#logWidget { background: black;  color: white }");
     QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     sizePolicy.setHeightForWidth(logWidget->sizePolicy().hasHeightForWidth());
     logWidget->setSizePolicy(sizePolicy);
 
-    mScriptConsoleWidget = new QWidget();
-    QVBoxLayout* verticalLayout = new QVBoxLayout(mScriptConsoleWidget);
-    verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
-    QVBoxLayout* verticalLayout_2 = new QVBoxLayout();
-    verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
-    QHBoxLayout* horizontalLayout = new QHBoxLayout();
-    horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
-    txtScriptInput = new LineEditWithHistory(mScriptConsoleWidget);
-    txtScriptInput->setObjectName(QString::fromUtf8("txtScriptInput"));
-    horizontalLayout->addWidget(txtScriptInput);
-    QPushButton* btnRunScript = new QPushButton(tr("Execute"), mScriptConsoleWidget);
-    btnRunScript->setObjectName(QString::fromUtf8("btnRunScript"));
-    connect(btnRunScript, SIGNAL(clicked()), this, SLOT(runScriptClicked()));
-    connect(txtScriptInput, SIGNAL(returnPressed()), this, SLOT(runScriptClicked()));
-    horizontalLayout->addWidget(btnRunScript);
-    verticalLayout_2->addLayout(horizontalLayout);
-    listScriptOutput = new QListWidget(mScriptConsoleWidget);
-    listScriptOutput->setObjectName(QString::fromUtf8("listScriptOutput"));
-    listScriptOutput->setContextMenuPolicy(Qt::ActionsContextMenu);
-    listScriptOutput->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    listScriptOutput->setSelectionBehavior(QAbstractItemView::SelectRows);
-    listScriptOutput->setWordWrap(true);
-    listScriptOutput->setSizePolicy(sizePolicy);
-    verticalLayout_2->addWidget(listScriptOutput);
-    verticalLayout->addLayout(verticalLayout_2);
+    //mScriptConsoleWidget = new QWidget();
+    //QVBoxLayout* verticalLayout = new QVBoxLayout(mScriptConsoleWidget);
+    //verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
+    //QVBoxLayout* verticalLayout_2 = new QVBoxLayout();
+    //verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
+    //QHBoxLayout* horizontalLayout = new QHBoxLayout();
+    //horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
+    //txtScriptInput = new LineEditWithHistory(mScriptConsoleWidget);
+    //txtScriptInput->setObjectName(QString::fromUtf8("txtScriptInput"));
+    //horizontalLayout->addWidget(txtScriptInput);
+    //QPushButton* btnRunScript = new QPushButton(tr("Execute"), mScriptConsoleWidget);
+    //btnRunScript->setObjectName(QString::fromUtf8("btnRunScript"));
+    //connect(btnRunScript, SIGNAL(clicked()), this, SLOT(runScriptClicked()));
+    //connect(txtScriptInput, SIGNAL(returnPressed()), this, SLOT(runScriptClicked()));
+    //horizontalLayout->addWidget(btnRunScript);
+    //verticalLayout_2->addLayout(horizontalLayout);
+    //listScriptOutput = new QListWidget(mScriptConsoleWidget);
+    //listScriptOutput->setObjectName(QString::fromUtf8("listScriptOutput"));
+    //listScriptOutput->setContextMenuPolicy(Qt::ActionsContextMenu);
+    //listScriptOutput->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    //listScriptOutput->setSelectionBehavior(QAbstractItemView::SelectRows);
+    //listScriptOutput->setWordWrap(true);
+    //listScriptOutput->setStyleSheet("QListWidget#listScriptOutput { background: black;  color: white }");
+    //listScriptOutput->setSizePolicy(sizePolicy);
+    //verticalLayout_2->addWidget(listScriptOutput);
+    //verticalLayout->addLayout(verticalLayout_2);
     mLogTabs = new QTabWidget(logDockWidget);
     mLogTabs->addTab(logWidget, tr("Log"));
-    mLogTabs->addTab(mScriptConsoleWidget, tr("Script Console"));
+    //mLogTabs->addTab(mScriptConsoleWidget, tr("Script Console"));
 
     logDockWidget->setWidget(mLogTabs);
     logDockWidget->setVisible(false);
@@ -1224,7 +1186,6 @@ void MainWindow::setupLog()
 void MainWindow::updateLog(QListWidgetItem* item)
 {
     Q_ASSERT(item);
-    item->setBackgroundColor(QColor("#000000"));
     logWidget->addItem(item);
     switch( item->type() )
     {
@@ -1325,16 +1286,16 @@ void MainWindow::timerLoop()
     //}
 
     bool isSceneLoaded = OgitorsRoot::getSingletonPtr()->IsSceneLoaded();
-
+    
     if(isMinimized() || !mAppActive || !isSceneLoaded)
     {
         if(mTimer->interval() != 200)
-            mTimer->setInterval(200);
+            mTimer->setInterval(200); 
     }
     else
     {
         if(mTimer->interval() != 0)
-            mTimer->setInterval(0);
+            mTimer->setInterval(0); 
     }
 
     if(isSceneLoaded)
@@ -1358,22 +1319,20 @@ void MainWindow::timerLoop()
     {
         updateLog(new QListWidgetItem(messages[i].mMessage, 0, messages[i].mLevel) );
     }
-
+    
     if(messages.size() > 0)
         logWidget->scrollToBottom();
 
-    Ogre::StringVector conMessages;
-    lastConsolePos = OgitorsScriptConsole::getSingletonPtr()->getOutput(lastConsolePos, conMessages);
+    //Ogre::StringVector conMessages;
+    //lastConsolePos = OgitorsScriptConsole::getSingletonPtr()->getOutput(lastConsolePos, conMessages);
 
-    for(unsigned int i = 0;i < conMessages.size();i++)
-    {
-        QListWidgetItem *itemScript = new QListWidgetItem(QString(conMessages[i].c_str()));
-        itemScript->setBackgroundColor(QColor("#000000"));
-        listScriptOutput->addItem(itemScript);
-    }
+    //for(unsigned int i = 0;i < conMessages.size();i++)
+    //{
+    //    listScriptOutput->addItem(QString(conMessages[i].c_str()));
+    //}
 
-    if(conMessages.size() > 0)
-        listScriptOutput->scrollToBottom();
+    //if(conMessages.size() > 0)
+    //    listScriptOutput->scrollToBottom();
 
 #if OGRE_MEMORY_TRACKER
     unsigned int total = Ogre::MemoryTracker::get().getTotalMemoryAllocated() / (1024 * 1024);
@@ -1397,7 +1356,7 @@ void MainWindow::timerLoop()
         renderDelta += timediff;
 
         unsigned int TargetDelta;
-
+        
         if(mTargetRenderCount > 0)
             TargetDelta = 1000 / mTargetRenderCount;
         else
@@ -1419,7 +1378,7 @@ bool MainWindow::eventFilter(QObject *obj,  QEvent *event)
     {
         if (event->type() == QEvent::ApplicationActivate)
         {
-            // This gets called when the application starts, and when you switch back.
+            // This gets called when the application starts, and when you switch back. 
             inActivationEvent = true;
             mAppActive = true;
             inActivationEvent = false;
@@ -1427,7 +1386,7 @@ bool MainWindow::eventFilter(QObject *obj,  QEvent *event)
 
         else if (event->type() == QEvent::ApplicationDeactivate)
         {
-            // This gets called when the application closes, and when you switch away.
+            // This gets called when the application closes, and when you switch away. 
             inActivationEvent = true;
             mAppActive = false;
             inActivationEvent = false;
@@ -1448,7 +1407,7 @@ void MainWindow::onSceneRunStateChange(Ogitors::IEvent* evt)
     {
         //reload the zone selection widget when a scene is loaded
         RunState state = change_event->getType();
-
+	
         if(state == RS_STOPPED)
         {
             actPlayerRunPause->setEnabled(OgitorsRoot::getSingletonPtr()->IsSceneLoaded());
@@ -1487,7 +1446,7 @@ void MainWindow::onSceneEditorToolChange(Ogitors::IEvent* evt)
     {
         //reload the zone selection widget when a scene is loaded
         unsigned int tool = change_event->getType();
-
+	
         actSelect->setChecked(tool == TOOL_SELECT);
         actMove->setChecked(tool == TOOL_MOVE);
         actRotate->setChecked(tool == TOOL_ROTATE);
@@ -1508,18 +1467,18 @@ void MainWindow::onSceneModifiedChange(Ogitors::IEvent* evt)
     if(change_event)
     {
         bool state = change_event->getState();
-
+	
         if(state != actSave->isEnabled())
         {
             QString appTitle;
             appTitle = "qtOgitor ";
             appTitle += Ogitors::OGITOR_VERSION;
             if(state)
-                appTitle += QString(" - (*)");
+                appTitle += QString(" - (*)"); 
             else
                 appTitle += QString(" - ");
 
-            appTitle += QString(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectName.c_str()) + QString(".ofs");
+            appTitle += QString(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectName.c_str()) + QString(".ogscene");
             setWindowTitle(appTitle);
         }
 
@@ -1563,61 +1522,5 @@ void MainWindow::onTerrainEditorChange(Ogitors::IEvent* evt)
         actToggleWalkAround->setEnabled(terED);
         actPaint->setEnabled(terED && terED->canPaint());
     }
-}
-//------------------------------------------------------------------------------------
-void MainWindow::autoSaveScene()
-{
-    bool modified = OgitorsRoot::getSingletonPtr()->IsSceneModified();
-
-    // Build new file name
-    QDateTime current = QDateTime::currentDateTime();
-    QString exportfile = OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupFolder.c_str();
-    exportfile.append(QDir::separator());
-    exportfile.append(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectName.c_str());
-    exportfile.append(current.toString("_yyyy_MM_dd_HH_mm"));
-
-    // Limited number of backups -> count current and delete one if needed
-    if(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupNumber != 0)
-    {
-        QDir dir = QDir(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupFolder.c_str());
-        QFileInfoList fileList = dir.entryInfoList();
-        QFileInfoList fileListBackup = QFileInfoList();
-        QString regexString = OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectName.c_str();
-        regexString.append("{1}\\S*ofs{1}");
-        QRegExp regex = QRegExp(regexString);
-
-        for(int i = 0; i < fileList.size(); i++)
-        {
-            if(regex.exactMatch(fileList[i].fileName()))
-                fileListBackup.append(fileList[i]);
-        }
-
-        // Got the find the oldest file and get rid of it.
-        // To ensure all is correct, the creation dates of the files are compared,
-        // although in most (if not any) cases, the first file of the fileListBackup will be
-        // the one that was created first, since those file names are usually sorted by their names
-        // and the backup date and time is encoded in the file name itself.
-        if(fileListBackup.size() >= OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupNumber)
-        {
-            QDateTime oldestDateTime = fileListBackup[0].created();
-            QString oldestFilePath = fileListBackup[0].filePath();
-
-            for(int i = 0; i < fileListBackup.size(); i++)
-                if(fileListBackup[i].created().toTime_t() < oldestDateTime.toTime_t())
-                {
-                    oldestDateTime = fileListBackup[i].created();
-                    oldestFilePath = fileListBackup[i].filePath();
-                }
-
-            QFile::remove(oldestFilePath);
-        }
-    }
-
-    if(exportfile[0] == '.')
-        exportfile = QString(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectDir.c_str()) + QString("/") + exportfile;
-
-    saveScene(exportfile);
-
-    OgitorsRoot::getSingletonPtr()->SetSceneModified(modified);
 }
 //------------------------------------------------------------------------------------

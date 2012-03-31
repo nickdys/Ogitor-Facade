@@ -33,8 +33,6 @@
 #ifndef OGITORPREFERENCESWIDGET_HXX
 #define OGITORPREFERENCESWIDGET_HXX
 
-//----------------------------------------------------------------------------------------
-
 #include <QtGui/QWidget>
 #include <QtGui/QTreeWidget>
 #include <QtCore/QMap>
@@ -43,26 +41,26 @@
 
 #include "ui_ogitorpreferencestab.h"
 
-//----------------------------------------------------------------------------------------
 
-class OgitorPreferencesWidget : public QWidget, Ogitors::PreferencesEditor, Ui::ogitorPreferencesWidget
+
+class OgitorPreferencesWidget : public QWidget, Ui::ogitorPreferencesWidget
 {
     Q_OBJECT
 public:
-    OgitorPreferencesWidget(Ogre::String prefSectionName, QWidget *parent = 0);
+    OgitorPreferencesWidget(QWidget *parent = 0);
     virtual ~OgitorPreferencesWidget();
 
     void     getPreferences(Ogre::NameValuePairList& preferences);
-    void    *getPreferencesWidget();
+    void    *getPreferencesWidget(const Ogre::NameValuePairList& list);
     bool     applyPreferences();
+    
+    // Methods for easy access to preference values
+    QString  getPrefCustomStyleSheet();
+    QString  getPrefCustomLanguage();
 
 public Q_SLOTS:
     void setDirty();
-    void keyboardLayoutChanged();
     void languageChanged();
-    void treeChanged(QTreeWidgetItem* item, int row);
-    void renderSystemChanged();
-    void VSyncChanged();
     
 Q_SIGNALS:
     void isDirty();
@@ -72,16 +70,8 @@ private:
 
     void fillOgreTab();
     
-    bool                    mKeyboardLayoutChanged;
-    bool                    mPluginsChanged;
     bool                    mLanguageChanged;
-    bool                    mRenderSystemChanged;
-    bool                    mVSyncChanged;
     QMap<QString, QString>  mLanguageMap;
 };
 
-//----------------------------------------------------------------------------------------
-
 #endif // OGITORPREFERENCESWIDGET_HXX
-
-//----------------------------------------------------------------------------------------

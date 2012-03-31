@@ -420,9 +420,6 @@ CLightEditorFactory::CLightEditorFactory(OgitorsView *view) : CBaseEditorFactory
 
     AddPropertyDefinition("power", "Power", "The light object's power.",PROP_REAL);
     AddPropertyDefinition("castshadows", "Cast Shadows", "Does the object cast shadows?",PROP_BOOL);
-
-    OgitorsPropertyDefMap::iterator it = mPropertyDefs.find("updatescript");
-    it->second.setAccess(true, true);
 }
 //-----------------------------------------------------------------------------------------
 CBaseEditorFactory *CLightEditorFactory::duplicate(OgitorsView *view)

@@ -58,17 +58,16 @@ class PreferencesManager : public QObject
 
     struct PreferencesSection
     {
-        QString         identifier;
-        QString         sectionName;
+        QString identifier;
         QTreeWidgetItem *treeItem;
-        QWidget         *widget;
+        QWidget *widget;
     };
 
 public:
     PreferencesManager(QWidget *parent = 0);
     virtual ~PreferencesManager();
 
-    void addPluginSection(QString identifier, QString sectionImagePath, QString sectionName, QWidget *tabWidget);
+    void addSection(QString identifier, QString sectionImagePath, QWidget *tabWidget);
     void showDialog();
     
 public Q_SLOTS:
@@ -79,7 +78,7 @@ public Q_SLOTS:
     void selectionChanged();
     
 private:
-    void addCoreSection(QString identifier, QString sectionImagePath,QString sectionName, QWidget *tabWidget);
+    void addCoreSection(QString identifier, QString sectionImagePath, QWidget *tabWidget);
     void createPreferencesDialog(QWidget *parent);
     void setupSections();
     void savePreferences();
@@ -87,7 +86,7 @@ private:
     QTreeWidget             *mTreeWidget;
     QTreeWidgetItem         *mTreeWidgetRoot;
     QTreeWidgetItem         *mPluginsRootItem;
-    QSettings               *mOgitorSettings;
+    QSettings                *mOgitorSettings;
     QSpacerItem             *mButtonSpacer;
     QWidget                 *mParentWidget;
     QDialog                 *mPrefDlg;
@@ -100,7 +99,7 @@ private:
     ShortCutSettings        *mShortCutSettings;
     
     std::map<QString, PreferencesSection*>  mPreferencesSections;
-    Ogitors::PreferencesEditorDataList      mPreferencesEditors;
+    Ogitors::PreferenceEditorVector         mPreferencesEditors;
 };
 
 #endif // PREFERENCESMANAGER_H

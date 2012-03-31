@@ -51,23 +51,23 @@
 #include "ViewportEditor.h"
 #include "OgitorsUndoManager.h"
 
-#include "PagedGeometry.h"
-#include "GrassLoader.h"
+#include "PAGEDGEOMETRY/PagedGeometry.h"
+#include "PAGEDGEOMETRY/GrassLoader.h"
 
 using namespace Ogitors;
 
 //-----------------------------------------------------------------------------------------
 bool CTerrainGroupEditor::_getEditRect(Ogre::Vector3& editpos, Ogre::Rect& brushrect, Ogre::Rect& maprect, int size)
 {
-    int mMapBrushSize = (float)mBrushSize;
+    int mMapBrushSize = (float)mBrushSize; 
     float halfSize = (float)mBrushSize / 2.0f;
-
+    
     float tx = editpos.x - halfSize;
     float ty = editpos.y - halfSize;
 
     int mapX = tx;
     mapX += (int)(tx * 2.0f) - (mapX * 2);
-
+    
     int mapY = ty;
     mapY += (int)(ty * 2.0f) - (mapY * 2);
 
@@ -102,7 +102,7 @@ bool CTerrainGroupEditor::_getEditRect(Ogre::Vector3& editpos, Ogre::Rect& brush
     brushrect.right *= (float)BRUSH_DATA_SIZE / (float)mBrushSize;
     brushrect.top *= (float)BRUSH_DATA_SIZE / (float)mBrushSize;
     brushrect.bottom *= (float)BRUSH_DATA_SIZE / (float)mBrushSize;
-
+    
     return true;
 }
 //-----------------------------------------------------------------------------------------
@@ -111,14 +111,14 @@ void CTerrainGroupEditor::_deform(CTerrainPageEditor *handle, Ogre::Vector3 &edi
     Ogre::Rect brushrect, maprect;
     editpos.x *= (float)(mMapSize->get() - 1);
     editpos.y *= (float)(mMapSize->get() - 1);
-
+    
     if(!_getEditRect(editpos, brushrect, maprect, mMapSize->get()))
         return;
-
+    
     handle->_notifyModification(-1, maprect);
-
+    
     Ogre::Terrain *terrain = static_cast<Ogre::Terrain*>(handle->getHandle());
-
+    
     float *mHeightData = terrain->getHeightData();
 
     if(mEditDirection)
@@ -137,12 +137,12 @@ void CTerrainGroupEditor::_deform(CTerrainPageEditor *handle, Ogre::Vector3 &edi
         {
             assert(mapPos < (mMapSize->get() * mMapSize->get()) && mapPos >= 0);
             assert((int)brushPos < (BRUSH_DATA_SIZE * BRUSH_DATA_SIZE) && (int)brushPos >= 0);
-
+            
             float val = mHeightData[mapPos] + (mBrushData[(int)brushPos] * mBrushIntensity * timePassed);
-
+            
             assert(val < 10000.0f);
             assert(val > -10000.0f);
-
+            
             mHeightData[mapPos] = val;
             ++mapPos;
 
@@ -158,18 +158,18 @@ void CTerrainGroupEditor::_calculatesmoothingfactor(CTerrainPageEditor *handle, 
     Ogre::Rect brushrect, maprect;
     editpos.x *= (float)(mMapSize->get() - 1);
     editpos.y *= (float)(mMapSize->get() - 1);
-
+    
     avg = 0.0f;
     sample_count = 0;
 
     if(!_getEditRect(editpos, brushrect, maprect, mMapSize->get()))
         return;
-
+    
     Ogre::Terrain *terrain = static_cast<Ogre::Terrain*>(handle->getHandle());
 
     float *mHeightData = terrain->getHeightData();
     int mapPos;
-
+    
     for(int j = maprect.top;j < maprect.bottom;j++)
     {
         mapPos = (j * mMapSize->get()) + maprect.left;
@@ -180,7 +180,7 @@ void CTerrainGroupEditor::_calculatesmoothingfactor(CTerrainPageEditor *handle, 
             ++mapPos;
         }
     }
-
+    
     sample_count = (maprect.right - maprect.left) * (maprect.bottom - maprect.top);
 }
 //-----------------------------------------------------------------------------------------
@@ -189,10 +189,10 @@ void CTerrainGroupEditor::_smooth(CTerrainPageEditor *handle, Ogre::Vector3 &edi
     Ogre::Rect brushrect, maprect;
     editpos.x *= (float)(mMapSize->get() - 1);
     editpos.y *= (float)(mMapSize->get() - 1);
-
+    
     if(!_getEditRect(editpos, brushrect, maprect, mMapSize->get()))
         return;
-
+    
     handle->_notifyModification(-1, maprect);
 
     Ogre::Terrain *terrain = static_cast<Ogre::Terrain*>(handle->getHandle());
@@ -202,7 +202,7 @@ void CTerrainGroupEditor::_smooth(CTerrainPageEditor *handle, Ogre::Vector3 &edi
     float mRatio = (float)BRUSH_DATA_SIZE / (float)mBrushSize;
     float brushPos;
     int mapPos;
-
+    
     float mFactor = mBrushIntensity * timePassed * 0.03f;
 
     if(mEditDirection)
@@ -217,7 +217,7 @@ void CTerrainGroupEditor::_smooth(CTerrainPageEditor *handle, Ogre::Vector3 &edi
             {
                 assert(mapPos < (mMapSize->get() * mMapSize->get()) && mapPos >= 0);
                 assert((int)brushPos < (BRUSH_DATA_SIZE * BRUSH_DATA_SIZE) && (int)brushPos >= 0);
-
+                
                 float val = avg - mHeightData[mapPos];
                 val = val * std::min(mBrushData[(int)brushPos] * mFactor, 1.0f);
                 mHeightData[mapPos] -= val;
@@ -264,18 +264,14 @@ void CTerrainGroupEditor::_splat(CTerrainPageEditor *handle, Ogre::Vector3 &edit
         return;
 
     int mLayer = 0;
-
+    
     mLayer = handle->_getLayerID(mTextureDiffuse, mTextureNormal, mEditDirection);
-
+    
     if(mLayer < 1)
-    {
-        Ogre::String msg = handle->getName() + " already has maximum number of supported layers...";
-        mSystem->DisplayMessageDialog(OTR(msg), DLGTYPE_OK);
         return;
-    }
 
     handle->_notifyModification(mLayer, maprect);
-
+    
     int mLayerMax = terrain->getLayerCount();
     Ogre::TerrainLayerBlendMap *mBlendMaps[128];
     float *mBlendDatas[128];
@@ -318,10 +314,10 @@ void CTerrainGroupEditor::_splat(CTerrainPageEditor *handle, Ogre::Vector3 &edit
                 assert((int)brushPos < (BRUSH_DATA_SIZE * BRUSH_DATA_SIZE) && (int)brushPos >= 0);
 
                 sum = 0.0f;
-
+                
                 for(u = mLayer + 1;u < mLayerMax;u++)
                     sum += mBlendDatas[u][mapPos];
-
+                
                 float val = mCurrentBlendData[mapPos] + (mBrushData[(int)brushPos] * factor);
                 sum += val;
 
@@ -334,7 +330,7 @@ void CTerrainGroupEditor::_splat(CTerrainPageEditor *handle, Ogre::Vector3 &edit
                 }
                 else
                     mCurrentBlendData[mapPos] = val;
-
+                
                 ++mapPos;
             }
         }
@@ -470,9 +466,9 @@ void CTerrainGroupEditor::_splatGrass(CTerrainPageEditor *handle, Ogre::Vector3 
         return;
 
     int mLayer = -1;
-
+    
     mLayer = handle->_getGrassLayerID(mTextureGrass, mEditDirection);
-
+    
     if(mLayer < 0)
         return;
 
@@ -510,7 +506,7 @@ void CTerrainGroupEditor::_splatGrass(CTerrainPageEditor *handle, Ogre::Vector3 
                 val = std::min(val, 255.0f);
 
                 mDensityMapData[mapPos] = val;
-
+                
                 ++mapPos;
             }
         }
@@ -588,12 +584,12 @@ bool CTerrainGroupEditor::update(float timePassed)
                 float avg = 0.0f;
                 int sample_count = 0;
                 _calculatesmoothingfactor(terED, editpos, avg, sample_count);
-
+                
                 avg_total += avg;
                 sample_count_total += sample_count;
             }
         }
-
+        
         for (Ogre::TerrainGroup::TerrainList::iterator ti = terrainList.begin(); ti != terrainList.end(); ++ti)
         {
             terrain = *ti;
@@ -630,13 +626,13 @@ bool CTerrainGroupEditor::update(float timePassed)
             else if(mEditMode == EM_SPLATGRASS)
                 _splatGrass(terED, editpos, timePassed);
         }
-
+        
         if(groupUpdateNeeded)
             mHandle->update();
 
         mOgitorsRoot->SetSceneModified(true);
     }
-
+    
     if(mPGHandle)
         mPGHandle->update();
 

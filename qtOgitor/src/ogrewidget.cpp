@@ -36,7 +36,6 @@
 #include "objectsview.hxx"
 #include "templateview.hxx"
 #include "propertiesviewgeneral.hxx"
-#include "projectfilesview.hxx"
 
 #include "MultiSelEditor.h"
 #include "NodeEditor.h"
@@ -85,8 +84,8 @@ mRenderStop(false), mScreenResize(false), mCursorHidden(false), mDoLoadFile(doLo
     layout->setMargin(0);
     layout->addWidget(mOverlayWidget);
     setLayout(layout);
-    
-    EventManager::getSingletonPtr()->connectEvent(EventManager::LOAD_STATE_CHANGE,      this, true, 0, true, 0, EVENT_CALLBACK(OgreWidget, onSceneLoadStateChange));
+
+    EventManager::Instance()->connectEvent("load_state_change", this, true, 0, true, 0, EVENT_CALLBACK(OgreWidget, onSceneLoadStateChange));
 }
 //----------------------------------------------------------------------------------------
 OgreWidget::~OgreWidget()
@@ -97,8 +96,8 @@ OgreWidget::~OgreWidget()
         mOgreRoot->getRenderSystem()->removeListener(this);
     }
 
-    EventManager::getSingletonPtr()->disconnectEvent(EventManager::LOAD_STATE_CHANGE,           this);
-    
+    EventManager::Instance()->disconnectEvent("load_state_change", this);
+
     destroy();
 }
 //----------------------------------------------------------------------------------------
@@ -172,8 +171,8 @@ void OgreWidget::initializeOGRE()
         &params );
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_APPLE
-    mRenderWindow->windowMovedOrResized();
-    //resizeEvent(0);
+	mRenderWindow->windowMovedOrResized();
+	//resizeEvent(0);
 #endif
 #if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
     mRenderWindow->resize(width(), height());
@@ -441,7 +440,80 @@ void OgreWidget::wheelEvent(QWheelEvent *evt)
 
     OgitorsRoot::getSingletonPtr()->OnMouseWheel(pos, evt->delta(), getMouseButtons(evt->buttons(), Qt::NoButton));
 }
+//------------------------------------------------------------------------------------
+void OgreWidget::onSceneLoadStateChange(Ogitors::IEvent* evt)
+{
+    LoadStateChangeEvent *change_event = Ogitors::event_cast<LoadStateChangeEvent*>(evt);
 
+    if(change_event)
+    {
+        //reload the zone selection widget when a scene is loaded
+        LoadState state = change_event->getType();
+
+        QString appTitle;
+        appTitle = "qtOgitor ";
+        appTitle += Ogitors::OGITOR_VERSION;
+
+        if(state == LS_LOADED)
+        {
+            appTitle += QString(" - ") + QString(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectName.c_str()) + QString(".ogscene");
+
+            mOgitorMainWindow->setCameraPositions();
+
+            CViewportEditor *ovp = OgitorsRoot::getSingletonPtr()->GetViewport();
+            if(ovp)
+            {
+                ovp->SetEditorTool(TOOL_SELECT);
+                mOgitorMainWindow->mCameraSpeedSlider->setValue(ovp->GetCameraSpeed());
+                mOgitorMainWindow->mCameraSpeedSlider->setToolTip(QString("%1").arg((int)ovp->GetCameraSpeed()));
+            }
+
+            setAttribute(Qt::WA_PaintOnScreen, true);
+
+            Ogre::Vector3 pos = OgitorsRoot::getSingletonPtr()->GetViewport()->getCameraEditor()->getCamera()->getDerivedPosition();
+            char temp[128];
+            sprintf(temp," X: % .2f, Y: % .2f, Z: % .2f", pos.x, pos.y, pos.z);
+            QString camtext = QApplication::translate("MainWindow","Camera Position:") + QString(temp);
+            mOgitorMainWindow->mCamPosLabel->setText(camtext);
+
+            mOgitorMainWindow->getObjectsViewWidget()->prepareView();
+            mOgitorMainWindow->getEntityViewWidget()->prepareView();
+            mOgitorMainWindow->getTemplatesViewWidget()->prepareView();
+            mOgitorMainWindow->toggleGrid();
+
+            mOgitorMainWindow->getLayersViewWidget()->updateLayerNames();
+
+            mOverlayWidget->hide();
+        }
+        else if(state == LS_UNLOADED)
+        {
+            // Don't hide on OSX since we always want the windows up
+#if OGRE_PLATFORM != OGRE_PLATFORM_APPLE
+            if(!mSwitchingScene)
+                mOgitorMainWindow->hideSubWindows();
+
+            mSwitchingScene = false;
+#endif
+            mOgitorMainWindow->getObjectsViewWidget()->clearView();
+            mOgitorMainWindow->getEntityViewWidget()->clearView();
+            mOgitorMainWindow->getTemplatesViewWidget()->destroyScene();
+            mOgitorMainWindow->mCamPosLabel->setText("");
+            mOgitorMainWindow->mTriangleCountLabel->setText("");
+            mOverlayWidget->show();
+        }
+        else if(state == LS_LOADING)
+        {
+            mOgitorMainWindow->showSubWindows();
+            repaint();
+            return;
+        }
+
+        mOgitorMainWindow->updateLoadTerminateActions(state == LS_LOADED);
+        mOgitorMainWindow->setWindowTitle(appTitle);
+        setFocus();
+        repaint();
+    }
+}
 //------------------------------------------------------------------------------------
 QPaintEngine* OgreWidget::paintEngine() const
 {
@@ -606,119 +678,3 @@ void OgreWidget::objectMenu(int id)
         OgitorsRoot::getSingletonPtr()->GetSelection()->getAsSingle()->onObjectContextMenu(id);
 }
 //----------------------------------------------------------------------------------------
-void OgreWidget::onSceneLoadStateChange(Ogitors::IEvent* evt)
-{
-    LoadStateChangeEvent *change_event = Ogitors::event_cast<LoadStateChangeEvent*>(evt);
-
-    if(change_event)
-    {
-        //reload the zone selection widget when a scene is loaded
-        LoadState state = change_event->getType();
-
-        QString appTitle;
-        appTitle = "qtOgitor ";
-        appTitle += Ogitors::OGITOR_VERSION;
-
-        if(state == LS_LOADED)
-        {
-            appTitle += QString(" - ") + QString(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectName.c_str()) + QString(".ofs");
-
-            mOgitorMainWindow->setCameraPositions();
-
-            CViewportEditor *ovp = OgitorsRoot::getSingletonPtr()->GetViewport();
-            if(ovp)
-            {
-                ovp->SetEditorTool(TOOL_SELECT);
-                mOgitorMainWindow->mCameraSpeedSlider->setValue(ovp->GetCameraSpeed());
-                mOgitorMainWindow->mCameraSpeedSlider->setToolTip(QString("%1").arg((int)ovp->GetCameraSpeed()));
-            }
-
-            setAttribute(Qt::WA_PaintOnScreen, true);
-
-            Ogre::Vector3 pos = OgitorsRoot::getSingletonPtr()->GetViewport()->getCameraEditor()->getCamera()->getDerivedPosition();
-            char temp[128];
-            sprintf(temp," X: % .2f, Y: % .2f, Z: % .2f", pos.x, pos.y, pos.z);
-            QString camtext = QApplication::translate("MainWindow","Camera Position:") + QString(temp);
-            mOgitorMainWindow->mCamPosLabel->setText(camtext);
-
-            mOgitorMainWindow->getObjectsViewWidget()->prepareView();
-            mOgitorMainWindow->getEntityViewWidget()->prepareView();
-            mOgitorMainWindow->getTemplatesViewWidget()->prepareView();
-            mOgitorMainWindow->getProjectFilesViewWidget()->prepareView();
-            mOgitorMainWindow->toggleGrid();
-
-            mOgitorMainWindow->getLayersViewWidget()->updateLayerNames();
-
-            getOverlayWidget()->hide();
-
-            mOgitorMainWindow->getAutoBackupTimer()->stop();
-
-            // Check if backups are enabled, but the folder is not valid
-            if(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupEnabled == true)
-            {
-                QDir dir = QDir(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupFolder.c_str());
-                if(!dir.exists())
-                {
-                    QMessageBox::information(QApplication::activeWindow(), "Ogitor", tr("The specified auto backup directory does not exist.") + "\n" + tr("Auto backup will therefore be disabled."));
-                    OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupEnabled = false;
-                }
-                else
-                {
-                    // Auto Backup Period in minutes
-                    int aPeriod = 0;
-
-                    // Adjust auto backup timer
-                    if(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupPeriodType == 0)
-                        // Minutes -> value (in minutes) * 60 (to convert to seconds) * 1000 (to convert to milli-seconds)
-                        aPeriod = OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupPeriod;
-                    else if(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupPeriodType == 1)
-                        // Hours -> value (in hours) * 60 (to convert to minutes ) * 60 (to convert to seconds) * 1000 (to convert to milli-seconds)
-                        aPeriod = OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupPeriod * 60;
-
-                    if(aPeriod > 0)
-                    {
-                        mOgitorMainWindow->getAutoBackupTimer()->setInterval(aPeriod * 60 * 1000);
-                        mOgitorMainWindow->getAutoBackupTimer()->start();
-                    }
-                    else
-                    {
-                        QMessageBox::information(QApplication::activeWindow(), "Ogitor", tr("Auto Backup Period is not valid.") + "\n" + tr("Auto backup will therefore be disabled."));                        
-                        OgitorsRoot::getSingletonPtr()->GetProjectOptions()->AutoBackupEnabled = false;
-                    }
-                }
-            }
-        }
-        else if(state == LS_UNLOADED)
-        {
-            // Don't hide on OSX since we always want the windows up
-#if OGRE_PLATFORM != OGRE_PLATFORM_APPLE
-            if(!isSwitchingScene())
-                mOgitorMainWindow->hideSubWindows();
-
-            setSwitchingScene(false);
-#endif
-            mOgitorMainWindow->getObjectsViewWidget()->clearView();
-            mOgitorMainWindow->getEntityViewWidget()->clearView();
-            mOgitorMainWindow->getTemplatesViewWidget()->destroyScene();
-            mOgitorMainWindow->getProjectFilesViewWidget()->clearView();
-
-            mOgitorMainWindow->mCamPosLabel->setText("");
-            mOgitorMainWindow->mTriangleCountLabel->setText("");
-            getOverlayWidget()->show();
-            mOgitorMainWindow->getAutoBackupTimer()->stop();
-        }
-        else if(state == LS_LOADING)
-        {
-            mOgitorMainWindow->showSubWindows();
-            repaint();
-            return;
-        }
-
-        mOgitorMainWindow->updateLoadTerminateActions(state == LS_LOADED);
-        mOgitorMainWindow->setWindowTitle(appTitle);
-        setFocus();
-        repaint();
-    }
-}
-//------------------------------------------------------------------------------------
-

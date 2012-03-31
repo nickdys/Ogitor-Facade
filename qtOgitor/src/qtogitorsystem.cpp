@@ -43,7 +43,6 @@
 #include "propertiesviewcustom.hxx"
 #include "addterraindialog.hxx"
 #include "importheightmapdialog.hxx"
-#include "eucliddialog.hxx"
 #include "calculateblendmapdialog.hxx"
 #include "terraintoolswidget.hxx"
 
@@ -140,17 +139,13 @@ void QtOgitorSystem::DummyTranslationFunction()
 #undef tr
 }
 //-------------------------------------------------------------------------------
-QtOgitorSystem::QtOgitorSystem(): mGeneralPropsWidget(0), mCustomPropsWidget(0), mSceneTreeWidget(0), mLayerTreeWidget(0), mRenderViewWidget(0), mProgressDialog(0)
+QtOgitorSystem::QtOgitorSystem(): mGeneralPropsWidget(0), mCustomPropsWidget(0), mSceneTreeWidget(0), mLayerTreeWidget(0), mRenderViewWidget(0)
 {
     mIconList.clear();
     Ogitors::OgitorsUtils::SetExePath(QApplication::applicationDirPath().toStdString());
     QDir directory(QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + QString("\\OgitorProjects"));
     if(!directory.exists())
-#if defined(Q_WS_X11)
-    directory.setPath(QDesktopServices::storageLocation(QDesktopServices::HomeLocation));
-#else
-    directory.setPath("../Projects/");
-#endif
+        directory.setPath("../Projects/");
     mProjectsDirectory = directory.absolutePath();
     mCalcBlendmapDlg = 0;
 }
@@ -178,19 +173,11 @@ void QtOgitorSystem::initTreeIcons()
 
             if(filenm != QString(""))
             {
-#if defined(Q_WS_X11)
-                filenm = Ogitors::OgitorsUtils::QualifyPath("/usr/share/qtOgitor/Plugins/" + filenm.toStdString()).c_str();
-#else
                 filenm = Ogitors::OgitorsUtils::QualifyPath("../Plugins/" + filenm.toStdString()).c_str();
-#endif
                 mIconList[it->second->mTypeID] = filenm;
             }
             else
-#if defined(Q_WS_X11)
-                mIconList[it->second->mTypeID] = QString(Ogitors::OgitorsUtils::QualifyPath("/usr/share/qtOgitor/Plugins/Icons/project.svg").c_str());
-#else
                 mIconList[it->second->mTypeID] = QString(Ogitors::OgitorsUtils::QualifyPath("../Plugins/Icons/project.svg").c_str());
-#endif
 
         }
         it++;
@@ -216,8 +203,8 @@ bool CopyDir(const QString& src, const QString& target, const QString& targetRoo
     if (from.endsWith("/") || from.endsWith("\\")) {
         from.resize(from.length() - 1);
     }
-
-    QString targetDir(targetRoot);
+	
+	QString targetDir(targetRoot);
     if (targetDir.endsWith("/") || targetDir.endsWith("\\")) {
         targetDir.resize(targetDir.length() - 1);
     }
@@ -240,8 +227,8 @@ bool CopyDir(const QString& src, const QString& target, const QString& targetRoo
     while(it.hasNext())
     {
         filename = it.next();
-        if(filename.compare(targetDir) == 0)    // infinite cycle would happen if the target dir is within the source dir
-            continue;
+		if(filename.compare(targetDir) == 0)	// infinite cycle would happen if the target dir is within the source dir
+			continue;
         if (QDir(filename).exists())
         {
             if(!filename.endsWith(".")) {
@@ -357,22 +344,6 @@ void QtOgitorSystem::GetFileList(Ogre::String path, Ogre::StringVector &list)
     }
 }
 //-------------------------------------------------------------------------------
-void QtOgitorSystem::GetDirList(Ogre::String path, Ogre::StringVector &list)
-{
-    QString srcpath(Ogitors::OgitorsUtils::ExtractFilePath(path).c_str());
-
-    QDirIterator it(srcpath, QDir::Dirs);
-    while(it.hasNext())
-    {
-        QFileInfo file(it.next());
-
-        QString filename = file.baseName();
-
-        if(!filename.isEmpty() && filename != QString(".") && filename != QString(".."))
-            list.push_back(filename.toStdString());
-    }
-}
-//-------------------------------------------------------------------------------
 Ogitors::DIALOGRET QtOgitorSystem::DisplayMessageDialog(Ogre::UTFString msg, Ogitors::DIALOGTYPE dlgType)
 {
     QMessageBox::StandardButtons buttons;
@@ -410,8 +381,6 @@ Ogitors::DIALOGRET QtOgitorSystem::DisplayMessageDialog(Ogre::UTFString msg, Ogi
 //-------------------------------------------------------------------------------
 Ogre::String QtOgitorSystem::DisplayDirectorySelector(Ogre::UTFString title)
 {
-    mOgitorMainWindow->getOgreWidget()->stopRendering(true);
-
     QString path = QFileDialog::getExistingDirectory(QApplication::activeWindow(), ConvertToQString(title), QApplication::applicationDirPath()
 #if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
       , QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
@@ -419,55 +388,18 @@ Ogre::String QtOgitorSystem::DisplayDirectorySelector(Ogre::UTFString title)
       );
 #endif
 
-    mOgitorMainWindow->getOgreWidget()->stopRendering(false);
-
     return path.toStdString();
-}
-//-------------------------------------------------------------------------------
-void QtOgitorSystem::DisplayProgressDialog(Ogre::UTFString title, int min, int max, int value)
-{
-    if(mProgressDialog != 0)
-    {
-        delete mProgressDialog;
-        mProgressDialog = 0;
-    }
-
-    QString labeltext = ConvertToQString(title);
-    mProgressDialog = new QProgressDialog(labeltext, "", min, max, QApplication::activeWindow());
-    mProgressDialog->setValue(value);
-    mProgressDialog->setCancelButton(0);
-    mProgressDialog->setWindowModality(Qt::WindowModal);
-    Qt::WindowFlags flags = Qt::Popup;
-    mProgressDialog->setWindowFlags(flags);
-    mProgressDialog->show();
-    mProgressDialog->repaint();
-}
-//-------------------------------------------------------------------------------
-void QtOgitorSystem::HideProgressDialog()
-{
-    if(mProgressDialog != 0)
-    {
-        delete mProgressDialog;
-        mProgressDialog = 0;
-    }
-}
-//-------------------------------------------------------------------------------
-void QtOgitorSystem::UpdateProgressDialog(int value)
-{
-    mProgressDialog->setValue(value);
 }
 //-------------------------------------------------------------------------------
 Ogre::String QtOgitorSystem::DisplayOpenDialog(Ogre::UTFString title, Ogitors::UTFStringVector ExtensionList)
 {
-    mOgitorMainWindow->getOgreWidget()->stopRendering(true);
-
     QSettings settings;
     QString theList;
     QString selectedFilter;
     QString oldOpenPath;
     for(unsigned int i = 0; i < ExtensionList.size(); i+=2)
     {
-        if(i)
+        if(i) 
             theList += QString(";;");
         theList += ConvertToQString(ExtensionList[i]) + QString(" (") + ConvertToQString(ExtensionList[i + 1]) + QString(")");
     }
@@ -491,8 +423,6 @@ Ogre::String QtOgitorSystem::DisplayOpenDialog(Ogre::UTFString title, Ogitors::U
     );
 #endif
 
-    mOgitorMainWindow->getOgreWidget()->stopRendering(false);
-
     if(path != "")
     {
         settings.beginGroup("OgitorSystem");
@@ -513,8 +443,6 @@ Ogre::String QtOgitorSystem::DisplayOpenDialog(Ogre::UTFString title, Ogitors::U
 //-------------------------------------------------------------------------------
 Ogre::String QtOgitorSystem::DisplaySaveDialog(Ogre::UTFString title, Ogitors::UTFStringVector ExtensionList)
 {
-    mOgitorMainWindow->getOgreWidget()->stopRendering(true);
-
     QSettings settings;
     QString theList;
     QString selectedFilter;
@@ -522,17 +450,17 @@ Ogre::String QtOgitorSystem::DisplaySaveDialog(Ogre::UTFString title, Ogitors::U
 
     for(unsigned int i = 0; i < ExtensionList.size(); i+=2)
     {
-        if(i)
+        if(i) 
             theList += QString(";;");
         theList += ConvertToQString(ExtensionList[i]) + QString(" (") + ConvertToQString(ExtensionList[i + 1]) + QString(")");
     }
-
+    
     settings.beginGroup("OgitorSystem");
     if(theList.contains("xml", Qt::CaseInsensitive))
     {
         oldSavePath = settings.value("oldDotsceneSavePath", mProjectsDirectory).toString();
         selectedFilter = settings.value("selectedDotsceneFilter", "").toString();
-    }
+    } 
     else
     {
         oldSavePath = settings.value("oldSavePath", mProjectsDirectory).toString();
@@ -546,9 +474,6 @@ Ogre::String QtOgitorSystem::DisplaySaveDialog(Ogre::UTFString title, Ogitors::U
 #else
     );
 #endif
-
-    mOgitorMainWindow->getOgreWidget()->stopRendering(false);
-
     if(path != "")
     {
         settings.beginGroup("OgitorSystem");
@@ -624,17 +549,37 @@ void QtOgitorSystem::ShowMouseCursor(bool bShow)
 //-------------------------------------------------------------------------------
 bool QtOgitorSystem::DisplayTerrainDialog(Ogre::NameValuePairList &params)
 {
+    QStringList list;
+    Ogre::NameValuePairList::const_iterator it = params.begin();
+    while(it != params.end())
+    {
+        list.push_back(QString(it->second.c_str()));
+        it++;
+    }
+
+    AddTerrainDialog dlg(QApplication::activeWindow(), list);
     params.clear();
-    AddTerrainDialog dlg(QApplication::activeWindow(), params);
- 
-    dlg.exec();
-    return Ogre::StringConverter::parseBool(params["init"]);
+
+    if(dlg.exec() == QDialog::Accepted)
+    {
+        Ogre::String pos = dlg.mPositionCombo->itemText(dlg.mPositionCombo->currentIndex()).toStdString();
+        std::replace(pos.begin(), pos.end(), 'x', ' ');
+        Ogre::Vector2 vpos = Ogre::StringConverter::parseVector2(pos);
+        params["init"] = "true";
+        params["pagex"] = Ogre::StringConverter::toString((int)vpos.x);
+        params["pagey"] = Ogre::StringConverter::toString((int)vpos.y);
+        params["diffuse"] = dlg.mDiffuseCombo->itemText(dlg.mDiffuseCombo->currentIndex()).toStdString();
+        params["normal"] = dlg.mNormalCombo->itemText(dlg.mNormalCombo->currentIndex()).toStdString();
+        return true;
+    }
+    else
+        return false;
 }
 //-------------------------------------------------------------------------------
 bool QtOgitorSystem::DisplayImportHeightMapDialog(Ogre::NameValuePairList &params)
 {
     ImportHeightMapDialog dlg(QApplication::activeWindow());
-
+    
     Ogre::NameValuePairList::iterator it;
 
     if((it = params.find("title")) != params.end())
@@ -656,7 +601,7 @@ bool QtOgitorSystem::DisplayImportHeightMapDialog(Ogre::NameValuePairList &param
 
     if((it = params.find("input2value")) != params.end())
         dlg.mInputBias->setText(params["input2value"].c_str());
-
+    
     params.clear();
 
     if(dlg.exec() == QDialog::Accepted)
@@ -664,46 +609,6 @@ bool QtOgitorSystem::DisplayImportHeightMapDialog(Ogre::NameValuePairList &param
         params["input1"] = dlg.mInputScale->text().toStdString();
         params["input2"] = dlg.mInputBias->text().toStdString();
         params["inputCheckV"] = "false";
-        return true;
-    }
-    else
-        return false;
-}
-//-------------------------------------------------------------------------------
-bool QtOgitorSystem::DisplayEuclidDialog(Ogre::NameValuePairList &params)
-{
-    EuclidDialog dlg(QApplication::activeWindow());
-
-    Ogre::NameValuePairList::iterator it;
-
-    if((it = params.find("title")) != params.end())
-        dlg.setWindowTitle(params["title"].c_str());
-
-    if((it = params.find("input1")) != params.end())
-        dlg.input1label->setText(params["input1"].c_str());
-
-    if((it = params.find("input2")) != params.end())
-        dlg.input2label->setText(params["input2"].c_str());
-
-    if((it = params.find("input3")) != params.end())
-        dlg.input3Label->setText(params["input3"].c_str());
-
-    if((it = params.find("input1value")) != params.end())
-        dlg.mInputPitch->setText(params["input1value"].c_str());
-
-    if((it = params.find("input2value")) != params.end())
-        dlg.mInputYaw->setText(params["input2value"].c_str());
-
-    if((it = params.find("input3value")) != params.end())
-        dlg.mInputRoll->setText(params["input3value"].c_str());
-
-    params.clear();
-
-    if(dlg.exec() == QDialog::Accepted)
-    {
-        params["input1"] = dlg.mInputPitch->text().toStdString();
-        params["input2"] = dlg.mInputYaw->text().toStdString();
-        params["input3"] = dlg.mInputRoll->text().toStdString();
         return true;
     }
     else
@@ -773,7 +678,7 @@ bool QtOgitorSystem::DisplayCalculateBlendMapDialog(Ogre::NameValuePairList &par
             params[keyst + "hr"] = mCalcBlendmapDlg->hr1->text().toStdString();
             params[keyst + "sr"] = mCalcBlendmapDlg->sr1->text().toStdString();
         }
-
+        
         if(mCalcBlendmapDlg->enable2->checkState() == Qt::Checked)
         {
             position++;
@@ -902,7 +807,7 @@ void QtOgitorSystem::SelectTreeItem(Ogitors::CBaseEditor *object)
 
         QList<QTreeWidgetItem*> list1 = mSceneTreeWidget->getTreeWidget()->selectedItems();
         QList<QTreeWidgetItem*> list2 = mLayerTreeWidget->getTreeWidget()->selectedItems();
-
+        
         if(object->getEditorType() != Ogitors::ETYPE_MULTISEL)
         {
             for(int i = 0;i < list1.size();i++)
@@ -912,7 +817,7 @@ void QtOgitorSystem::SelectTreeItem(Ogitors::CBaseEditor *object)
                 list2[i]->setSelected(false);
 
             QTreeWidgetItem* handle = (QTreeWidgetItem*)object->getSceneTreeItemHandle();
-
+        
             if(handle)
             {
                 mSceneTreeWidget->getTreeWidget()->scrollToItem(handle, QTreeWidget::EnsureVisible);
@@ -920,7 +825,7 @@ void QtOgitorSystem::SelectTreeItem(Ogitors::CBaseEditor *object)
             }
 
             handle = (QTreeWidgetItem*)object->getLayerTreeItemHandle();
-
+        
             if(handle)
             {
                 mLayerTreeWidget->getTreeWidget()->scrollToItem(handle, QTreeWidget::EnsureVisible);
@@ -1025,7 +930,7 @@ void *QtOgitorSystem::MoveTreeItem(void *newparent, void *object)
 {
     if(!object)
         return 0;
-
+    
     QTreeWidgetItem* item = static_cast<QTreeWidgetItem*>(object);
     if(item)
     {
@@ -1038,7 +943,7 @@ void *QtOgitorSystem::MoveTreeItem(void *newparent, void *object)
             parent->addChild(item);
         }
     }
-
+    
     return object;
 }
 //-------------------------------------------------------------------------------
@@ -1046,7 +951,7 @@ void QtOgitorSystem::MoveLayerTreeItem(int newparent, Ogitors::CBaseEditor *obje
 {
     if(!object)
         return;
-
+    
     QTreeWidgetItem* item = static_cast<QTreeWidgetItem*>(object->getLayerTreeItemHandle());
 
     if(item)
@@ -1069,7 +974,7 @@ void QtOgitorSystem::SetTreeItemText(Ogitors::CBaseEditor *object, Ogre::String 
 {
     if(!object)
         return;
-
+    
     QTreeWidgetItem* witem = static_cast<QTreeWidgetItem*>(object->getSceneTreeItemHandle());
     if(witem)
     {
@@ -1087,7 +992,7 @@ void QtOgitorSystem::DeleteTreeItem(Ogitors::CBaseEditor *object)
 {
     if(!object)
         return;
-
+    
     QTreeWidgetItem* witem = static_cast<QTreeWidgetItem*>(object->getSceneTreeItemHandle());
     if(witem && witem->parent())
     {
@@ -1121,7 +1026,7 @@ void QtOgitorSystem::SetTreeItemColour(Ogitors::CBaseEditor *object, unsigned in
 {
     if(!object)
         return;
-
+    
     QTreeWidgetItem* witem = static_cast<QTreeWidgetItem*>(object->getSceneTreeItemHandle());
     if(witem)
     {
@@ -1138,7 +1043,7 @@ void QtOgitorSystem::SetTreeItemColour(Ogitors::CBaseEditor *object, unsigned in
 void QtOgitorSystem::ClearTreeItems()
 {
     mSceneTreeWidget->getTreeWidget()->clear();
-
+    
     mOgitorMainWindow->getLayersViewWidget()->resetLayerNames();
 }
 //-------------------------------------------------------------------------------

@@ -3,28 +3,6 @@
     min-width: 100%;
 }
 
-QStatusBar{
-    border: 1px solid #C8C8C8;
-}
-
-QToolBar {
-	border : none;
-}
-
-QListWidget#logWidget{
-	color: white;
-    background: black;
-}
-
-QListWidget#listScriptOutput{
-	color: white;
-    background: black;
-}
-
-QLabel#descLabel{
-    background-color: #AFAFAF;
-}
-
 pane {
     background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(223, 232, 244, 255), stop:1 rgba(224, 241, 253, 255));
     border: 1px solid #90B5E4;

@@ -45,25 +45,32 @@
         Ogre::TerrainGlobalOptions *mTerrainGlobalOptions;
         
         DotSceneLoader();
-        virtual ~DotSceneLoader();
+        virtual      ~DotSceneLoader();
 
-        void parseDotScene(const Ogre::String &SceneName, const Ogre::String &groupName, Ogre::SceneManager *yourSceneMgr, Ogre::SceneNode *pAttachNode = NULL, const Ogre::String &sPrependNode = "");
+        void         parseDotScene(const Ogre::String &SceneName, const Ogre::String &groupName, Ogre::SceneManager *yourSceneMgr, Ogre::SceneNode *pAttachNode = NULL, const Ogre::String &sPrependNode = "");
         Ogre::String getProperty(const Ogre::String &ndNm, const Ogre::String &prop);
+        
+        Ogre::String getResourceLocationBaseDir(){ return resLocationsBaseDir; };
+        void         setResourceLocationBaseDir( Ogre::String newBaseDir ){ resLocationsBaseDir = newBaseDir; };
 
         Ogre::TerrainGroup* getTerrainGroup() { return mTerrainGroup; }
+        
 
-        std::vector<nodeProperty> nodeProperties;
-        std::vector<Ogre::String> staticObjects;
-        std::vector<Ogre::String> dynamicObjects;
-        std::vector<Forests::PagedGeometry *> mPGHandles;
-        std::vector<Forests::TreeLoader3D *> mTreeHandles;
-        Forests::GrassLoader* mGrassLoaderHandle;                /** Handle to Forests::GrassLoader object */
+        std::vector<nodeProperty>               nodeProperties;
+        std::vector<Ogre::String>               staticObjects;
+        std::vector<Ogre::String>               dynamicObjects;
+        std::vector<Forests::PagedGeometry *>   mPGHandles;
+        std::vector<Forests::TreeLoader3D *>    mTreeHandles;
+        Forests::GrassLoader*                   mGrassLoaderHandle;   /** Handle to Forests::GrassLoader object */
+        std::vector<Ogre::ParticleSystem *>     particleSystemList;	// contains all the Particle Systems created
+
     protected:
         void processScene(rapidxml::xml_node<>* XMLRoot);
 
         void processNodes(rapidxml::xml_node<>* XMLNode);
         void processExternals(rapidxml::xml_node<>* XMLNode);
         void processEnvironment(rapidxml::xml_node<>* XMLNode);
+        void processResourceLocations(rapidxml::xml_node<>* XMLNode);
         void processTerrain(rapidxml::xml_node<>* XMLNode);
         void processTerrainPage(rapidxml::xml_node<>* XMLNode);
         void processGrassLayers(rapidxml::xml_node<>* XMLNode);
@@ -113,6 +120,8 @@
         // paged geometry related values
         int mPGPageSize;
         int mPGDetailDistance;
+        // resource locations basedir
+        Ogre::String resLocationsBaseDir;
     };
 
 #endif // DOT_SCENELOADER_H

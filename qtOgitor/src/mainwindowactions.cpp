@@ -36,10 +36,6 @@
 #include "OgitorsClipboardManager.h"
 #include "OgitorsScriptConsole.h"
 #include "ViewGrid.h"
-#include "DefaultEvents.h"
-#include "EventManager.h"
-#include "ofs.h"
-
 #include "ogrewidget.hxx"
 #include "aboutdialog.hxx"
 #include "sceneview.hxx"
@@ -56,8 +52,6 @@
 #include "preferencesmanager.hxx"
 #include "lineeditwithhistory.hxx"
 #include "terraintoolswidget.hxx"
-#include "generictexteditor.hxx"
-#include "genericimageeditor.hxx"
 
 using namespace Ogitors;
 
@@ -229,32 +223,14 @@ void MainWindow::addActions()
     actDecreaseGizmoScale->setIcon(QIcon(":/icons/sign_minus.svg"));
     actDecreaseGizmoScale->setShortcut(QKeySequence("-"));
 
-    QSettings settings;
-    QString style = settings.value("preferences/customStyleSheet").toString();
-
     actToggleWorldSpaceGizmo = new QAction(tr("World Space Gizmo"), this);
     actToggleWorldSpaceGizmo->setStatusTip(tr("Toggle World Space Gizmo"));
-
-    QString orient_icon = "";
-    if(style == ":/stylesheets/dark.qss") {
-        orient_icon = QString::fromLatin1(":/icons/orient_obj_dark_style.svg");
-    } else {
-        orient_icon = QString::fromLatin1(":/icons/orient_obj.svg");
-    }
-    actToggleWorldSpaceGizmo->setIcon(QIcon(orient_icon));
+    actToggleWorldSpaceGizmo->setIcon(QIcon(":/icons/orient_obj.svg"));
     actToggleWorldSpaceGizmo->setCheckable(true);
 
     actToggleWalkAround = new QAction(tr("Toggle Walk Around Mode"), this);
     actToggleWalkAround->setStatusTip(tr("Toggle Walk Around Mode"));
-
-    QString fly_icon = "";
-    if(style == ":/stylesheets/dark.qss") {
-        fly_icon = QString::fromLatin1(":/icons/mode_fly_dark_style.svg");
-    } else {
-        fly_icon = QString::fromLatin1(":/icons/mode_fly.svg");
-    }
-
-    actToggleWalkAround->setIcon(QIcon(fly_icon));
+    actToggleWalkAround->setIcon(QIcon(":/icons/mode_fly.svg"));
     actToggleWalkAround->setCheckable(true);
 
     actToggleGrid = new QAction(tr("Grid"), this);
@@ -270,7 +246,6 @@ void MainWindow::addActions()
     actToggleProperties = propertiesDockWidget->toggleViewAction();
     actToggleTools = toolsDockWidget->toggleViewAction();
     actToggleLog = logDockWidget->toggleViewAction();
-    actToggleProjectFiles = projectFilesDockWidget->toggleViewAction();
 
     actToggleTools->setIcon(QIcon(":/icons/objects.svg"));
     actToggleTools->setText(tr("Tools"));
@@ -280,9 +255,6 @@ void MainWindow::addActions()
     actToggleExplorer->setText(tr("Explorer"));
     actToggleExplorer->setStatusTip(tr("Toggle Explorer Panel"));
     actToggleExplorer->setShortcut(QKeySequence("F5"));
-    actToggleProjectFiles->setIcon(QIcon(":/icons/files.svg"));
-    actToggleProjectFiles->setText(tr("Files"));
-    actToggleProjectFiles->setStatusTip(tr("Toggle Project Files Panel"));
     actToggleLayer->setIcon(QIcon(":/icons/visibility.svg"));
     actToggleLayer->setText(tr("Groups"));
     actToggleLayer->setStatusTip(tr("Toggle Groups Panel"));
@@ -457,7 +429,7 @@ void MainWindow::updateActions()
         return;
 
     CViewportEditor *viewport = OgitorsRoot::getSingletonPtr()->GetViewport();
-
+    
     if(viewport && viewport->getCameraEditor())
     {
         int mode = viewport->getCamPolyMode();
@@ -471,7 +443,7 @@ void MainWindow::updateActions()
 void MainWindow::updateLoadTerminateActions(bool loaded)
 {
     menuImport->setEnabled(menuImport->actions().size() > 0);
-
+    
     if(!loaded)
     {
         actEditRename->setEnabled(false);
@@ -493,7 +465,7 @@ void MainWindow::updateLoadTerminateActions(bool loaded)
         actMove->setChecked(tool == TOOL_MOVE);
         actRotate->setChecked(tool == TOOL_ROTATE);
         actScale->setChecked(tool == TOOL_SCALE);
-
+    
         menuExport->setEnabled(menuExport->actions().size() > 0);
 
         Ogitors::PROJECTOPTIONS *pOpt = OgitorsRoot::getSingletonPtr()->GetProjectOptions();
@@ -530,25 +502,10 @@ void MainWindow::updateLoadTerminateActions(bool loaded)
     actScale->setEnabled(loaded);
     actToggleWorldSpaceGizmo->setEnabled(loaded);
     actToggleWorldSpaceGizmo->setChecked(false);
-    QSettings settings;
-    QString style = settings.value("preferences/customStyleSheet").toString();
-    QString orient_icon = "";
-    if(style == ":/stylesheets/dark.qss") {
-        orient_icon = QString::fromLatin1(":/icons/orient_obj_dark_style.svg");
-    } else {
-        orient_icon = QString::fromLatin1(":/icons/orient_obj.svg");
-    }
-    actToggleWorldSpaceGizmo->setIcon(QIcon(orient_icon));
+    actToggleWorldSpaceGizmo->setIcon(QIcon(":/icons/orient_obj.svg"));
     actToggleWalkAround->setEnabled(loaded);
     actToggleWalkAround->setChecked(false);
-
-    QString fly_icon = "";
-    if(style == ":/stylesheets/dark.qss") {
-        fly_icon = QString::fromLatin1(":/icons/mode_fly_dark_style.svg");
-    } else {
-        fly_icon = QString::fromLatin1(":/icons/mode_fly.svg");
-    }
-    actToggleWalkAround->setIcon(QIcon(fly_icon));
+    actToggleWalkAround->setIcon(QIcon(":/icons/mode_fly.svg"));
     actCamSpeedMinus->setEnabled(loaded);
     actCamSpeedPlus->setEnabled(loaded);
     menuCamPolyMode->setEnabled(loaded);
@@ -627,27 +584,26 @@ void MainWindow::newScene()
         pOpt->LayerNames[v] = "Layer " + Ogre::StringConverter::toString(v);
         pOpt->LayerVisible[v] = true;
     }
-
+    
     pOpt->LayerCount = 1;
 
     SettingsDialog dlg(QApplication::activeWindow(), pOpt);
-
+    
     if(dlg.exec() == QDialog::Accepted)
     {
         char buffer[5000];
-        Ogre::String filename = ogRoot->GetProjectOptions()->ProjectDir + "/" + ogRoot->GetProjectOptions()->ProjectName + ".ofs";
+        Ogre::String filename = ogRoot->GetProjectOptions()->ProjectDir + "/" + ogRoot->GetProjectOptions()->ProjectName + ".ogscene";
         filename = Ogitors::OgitorsUtils::QualifyPath(filename);
-
+        
         bool succeed = false;
-
-        OFS::OfsPtr mFile;
-
+        
         try
         {
-            if(mFile.mount(filename.c_str(), OFS::OFS_MOUNT_CREATE) == OFS::OFS_OK)
+            std::ofstream outfile(filename.c_str());
+            
+            if(outfile.is_open())
                 succeed = true;
 
-            std::stringstream outfile;
             if(succeed)
             {
                 outfile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
@@ -655,15 +611,9 @@ void MainWindow::newScene()
                 ogRoot->WriteProjectOptions(outfile,true);
                 sprintf_s(buffer,5000,NewSceneDefinition,ogRoot->GetProjectOptions()->SceneManagerName.c_str(),ogRoot->GetProjectOptions()->SceneManagerName.c_str(),ogRoot->GetProjectOptions()->SceneManagerConfigFile.c_str());
                 outfile << buffer;
-
-                OFS::OFSHANDLE handle;
-                Ogre::String projfilename = "/";
-                projfilename += ogRoot->GetProjectOptions()->ProjectName + ".ogscene";
-
-                mFile->createFile(handle, projfilename.c_str(), outfile.tellp(), outfile.tellp(), outfile.str().c_str());
-                mFile->closeFile(handle);
-                mFile.unmount();
             }
+
+            outfile.close();
         }
         catch(...)
         {
@@ -735,18 +685,16 @@ void MainWindow::exitApp()
         close();
 }
 //------------------------------------------------------------------------------
-void MainWindow::saveScene(const QString& exportfile)
+void MainWindow::saveScene()
 {
     ITerrainEditor *terED = OgitorsRoot::getSingletonPtr()->GetTerrainEditor();
     if(terED && terED->isBackgroundProcessActive())
     {
-        if(QMessageBox::information(QApplication::activeWindow(), "qtOgitor", tr("Terrain is still making background calculations.") + "\n" + tr("Saving at this time may take much longer and cause temporary freeze.") + "\n" + tr("Do you want to continue?"), QMessageBox::Yes | QMessageBox::No) == QMessageBox::No)
+        if(QMessageBox::information(QApplication::activeWindow(),"qtOgitor", tr("Terrain is still making background calculations.") + "\n" + tr("Saving at this time may take much longer and cause temporary freeze.") + "\n" + tr("Do you want to continue?"), QMessageBox::Yes | QMessageBox::No) == QMessageBox::No)
             return;
     }
 
-    OgitorsRoot::getSingletonPtr()->SaveScene(false, exportfile.toStdString());
-
-    GenericTextEditor::getSingletonPtr()->saveAll();
+    OgitorsRoot::getSingletonPtr()->SaveScene(false);
 }
 //------------------------------------------------------------------------------
 void MainWindow::saveSceneAs()
@@ -977,8 +925,6 @@ void MainWindow::exportSerializer(const QString& value)
     try
     {
         OgitorsRoot::getSingletonPtr()->TriggerExportSerializer(value.toStdString());
-        Ogitors::AfterSceneExportEvent evt(value.toStdString());
-        EventManager::getSingletonPtr()->sendEvent(this, 0, &evt);
     }
     catch(...)
     {
@@ -1058,14 +1004,14 @@ void MainWindow::saveCamera()
 void MainWindow::deleteCamera(int id)
 {
     Ogitors::PROJECTOPTIONS *pOpt = OgitorsRoot::getSingletonPtr()->GetProjectOptions();
-    if(pOpt->CameraSaveCount == 0)
+    if(pOpt->CameraSaveCount == 0) 
         return;
 
     for(int i = id;i < pOpt->CameraSaveCount;i++)
     {
         pOpt->CameraPositions[i] = pOpt->CameraPositions[i + 1];
         pOpt->CameraOrientations[i] = pOpt->CameraOrientations[i + 1];
-
+    
         QString menustr;
         menustr = QString(tr("Camera %1: <%2, %3, %4>")).arg(i).arg(pOpt->CameraPositions[i].x)
                                                         .arg(pOpt->CameraPositions[i].y).arg(pOpt->CameraPositions[i].z);
@@ -1093,7 +1039,7 @@ void MainWindow::setCameraPolyMode(int value)
 void MainWindow::cameraAction(int id)
 {
     PROJECTOPTIONS *pOpt = OgitorsRoot::getSingletonPtr()->GetProjectOptions();
-    if(pOpt->CameraSaveCount == 0)
+    if(pOpt->CameraSaveCount == 0) 
         return;
 
     if(id > 99) //Remove Camera Position
@@ -1195,7 +1141,7 @@ void MainWindow::openSceneOptions()
     Ogitors::PROJECTOPTIONS *pOpt = ogRoot->GetProjectOptions();
 
     SettingsDialog dlg(QApplication::activeWindow(), pOpt);
-
+    
     Ogre::StringVector directories = pOpt->ResourceDirectories;
 
     if(dlg.exec() == QDialog::Accepted)
@@ -1237,7 +1183,7 @@ void MainWindow::openSceneOptions()
         matPtr->getTechnique(0)->getPass(0)->setSelfIllumination(pOpt->SelectionBBColour);
         matPtr.setNull();
     }
-
+    
     matPtr = Ogre::MaterialManager::getSingleton().getByName("HighlightBBMaterial", "General");
     if(!matPtr.isNull())
     {
@@ -1336,7 +1282,7 @@ void MainWindow::editCopyToTemplate()
             success = OgitorsClipboardManager::getSingletonPtr()->copyToTemplateMulti(static_cast<CMultiSelEditor*>(object), templatename, dialog.mScope->checkState() == Qt::Checked);
         else
             success = OgitorsClipboardManager::getSingletonPtr()->copyToTemplate(object, templatename, dialog.mScope->checkState() == Qt::Checked);
-
+        
         if(success)
         {
             mTemplatesViewWidget->prepareView();
@@ -1373,22 +1319,11 @@ void MainWindow::toggleWorldSpaceGizmo()
     bool state = actToggleWorldSpaceGizmo->isChecked();
 
     OgitorsRoot::getSingletonPtr()->SetWorldSpaceGizmoOrientation(state);
-
-    QSettings settings;
-    QString style = settings.value("preferences/customStyleSheet").toString();
-    QString orient_world_icon = "";
-    QString orient_obj_icon = "";
-    if(style == ":/stylesheets/dark.qss") {
-        orient_obj_icon = QString::fromLatin1(":/icons/orient_obj_dark_style.svg");
-        orient_world_icon = QString::fromLatin1(":/icons/orient_world_dark_style.svg");
-    } else {
-        orient_obj_icon = QString::fromLatin1(":/icons/orient_obj.svg");
-        orient_world_icon = QString::fromLatin1(":/icons/orient_world.svg");
-    }
+    
     if(state)
-        actToggleWorldSpaceGizmo->setIcon(QIcon(orient_world_icon));
+        actToggleWorldSpaceGizmo->setIcon(QIcon(":/icons/orient_world.svg"));
     else
-        actToggleWorldSpaceGizmo->setIcon(QIcon(orient_obj_icon));
+        actToggleWorldSpaceGizmo->setIcon(QIcon(":/icons/orient_obj.svg"));
 }
 //------------------------------------------------------------------------------
 void MainWindow::toggleWalkAround()
@@ -1396,23 +1331,11 @@ void MainWindow::toggleWalkAround()
     bool state = actToggleWalkAround->isChecked();
 
     OgitorsRoot::getSingletonPtr()->SetWalkAroundMode(state);
-
-    QSettings settings;
-    QString style = settings.value("preferences/customStyleSheet").toString();
-    QString fly_icon = "";
-    QString walk_icon = "";
-    if(style == ":/stylesheets/dark.qss") {
-        fly_icon = QString::fromLatin1(":/icons/mode_fly_dark_style.svg");
-        walk_icon = QString::fromLatin1(":/icons/mode_walk_dark_style.svg");
-    } else {
-        fly_icon = QString::fromLatin1(":/icons/mode_fly.svg");
-        walk_icon = QString::fromLatin1(":/icons/mode_walk.svg");
-    }
-
+    
     if(state)
-        actToggleWalkAround->setIcon(QIcon(walk_icon));
+        actToggleWalkAround->setIcon(QIcon(":/icons/mode_walk.svg"));
     else
-        actToggleWalkAround->setIcon(QIcon(fly_icon));
+        actToggleWalkAround->setIcon(QIcon(":/icons/mode_fly.svg"));
 }
 //------------------------------------------------------------------------------
 void MainWindow::saveLayout()
@@ -1484,12 +1407,8 @@ bool findScriptFile(QString &filename)
         return true;
 
     Ogre::String fileN = OgitorsUtils::ExtractFileName(filename.toStdString());
-#if defined(Q_WS_X11)
-    Ogre::String file = OgitorsUtils::QualifyPath("/usr/share/qtOgitor/Scripts/" + fileN);
-#else
     Ogre::String file = OgitorsUtils::QualifyPath("../Scripts/" + fileN);
-#endif
-
+        
     if(QFile(file.c_str()).exists())
     {
         filename = QString(file.c_str());
@@ -1498,9 +1417,13 @@ bool findScriptFile(QString &filename)
 
     if(OgitorsRoot::getSingletonPtr()->IsSceneLoaded())
     {
-        filename = QString("proj:/Scripts/") + QString(fileN.c_str());
-
-        return true;
+        file = OgitorsUtils::QualifyPath(OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectDir + "/Scripts/" + fileN);
+        
+        if(QFile(file.c_str()).exists())
+        {
+            filename = QString(file.c_str());
+            return true;
+        }
     }
 
     return false;
@@ -1511,18 +1434,18 @@ void MainWindow::runScriptClicked()
     QString command = txtScriptInput->text();
     command = command.trimmed();
     std::string commandString = command.toStdString();
-
+    
     if(command.startsWith("/run "))
     {
         command = command.right(command.length() - 5);
-
+        
         bool canundo = false;
         if(OgitorsRoot::getSingletonPtr()->IsSceneLoaded())
             canundo = true;
 
         if(canundo)
             OgitorsUndoManager::getSingletonPtr()->BeginCollection("Script " + command.toStdString());
-
+        
         if(findScriptFile(command))
         {
             commandString = command.toStdString();
@@ -1566,7 +1489,7 @@ void MainWindow::onAddScriptAction()
     if(dlg.exec() == QDialog::Accepted)
     {
         _addScriptAction(dlg.iconpath->text(), dlg.scriptpath->text());
-
+        
         _saveScriptActions();
     }
 }
@@ -1641,7 +1564,7 @@ void MainWindow::_removeScriptAction(QAction *action)
             mScriptActions[i].active = false;
 
             _saveScriptActions();
-
+            
             return;
         }
     }
@@ -1676,7 +1599,7 @@ void MainWindow::_editScriptAction(QAction *action)
 
                 _saveScriptActions();
             }
-
+            
             return;
         }
     }

@@ -33,7 +33,6 @@
 #include "OgitorsPrerequisites.h"
 #include "BaseEditor.h"
 #include "OgitorsRoot.h"
-#include "OgitorsSystem.h"
 #include "VisualHelper.h"
 #include "CameraVisualHelper.h"
 #include "ViewportEditor.h"
@@ -526,52 +525,6 @@ TiXmlElement* CCameraEditor::exportDotScene(TiXmlElement *pParent)
     return pCamera;
 }
 //-----------------------------------------------------------------------------------------
-bool CCameraEditor::getObjectContextMenu(UTFStringVector &menuitems) 
-{
-    menuitems.clear();
-
-    if(mOgitorsRoot->GetViewport()->getCameraEditor() != this)
-    {
-        menuitems.push_back(OTR("Make Active Camera"));
-        menuitems.push_back("");
-    }
-    else
-    {
-        menuitems.push_back("");
-        menuitems.push_back(OTR("Deactivate Camera"));
-    }
-
-    menuitems.push_back(OTR("Euclidean Rotation"));
-
-    return true;
-}
-//-------------------------------------------------------------------------------
-void CCameraEditor::onObjectContextMenu(int menuresult) 
-{
-    if(menuresult == 0)
-        mOgitorsRoot->GetViewport()->setCameraEditor(this);
-    else if(menuresult == 1)
-        mOgitorsRoot->GetViewport()->setCameraEditor(0);
-    else if(menuresult == 2)
-    {
-        Ogre::NameValuePairList params;
-        if(mSystem->DisplayEuclidDialog(params))
-        {
-            Ogre::Real fYaw = Ogre::StringConverter::parseReal(params["input2"]);
-            Ogre::Real fPitch = Ogre::StringConverter::parseReal(params["input1"]);
-            Ogre::Real fRoll = Ogre::StringConverter::parseReal(params["input3"]);
-
-            Ogre::Quaternion quatR, quatY, quatP;
-            quatY.FromAngleAxis(Ogre::Degree(fYaw), Ogre::Vector3::UNIT_Y);
-            quatP.FromAngleAxis(Ogre::Degree(fPitch), Ogre::Vector3::UNIT_X);
-            quatR.FromAngleAxis(Ogre::Degree(fRoll), Ogre::Vector3::UNIT_Z);
-            Ogre::Quaternion newQuat = quatY * quatP * quatR;
-
-            mOrientation->set(newQuat);
-        }
-    }
-}
-//-----------------------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------------------
@@ -622,9 +575,6 @@ CCameraEditorFactory::CCameraEditorFactory(OgitorsView *view) : CBaseEditorFacto
     
     definition = AddPropertyDefinition("polygonmode","Polygon Mode","The camera's polygon mode.",PROP_INT);
     definition->setOptions(&mCameraPolygonModes);
-
-    OgitorsPropertyDefMap::iterator it = mPropertyDefs.find("updatescript");
-    it->second.setAccess(true, true);
 }
 //-----------------------------------------------------------------------------------------
 CBaseEditorFactory *CCameraEditorFactory::duplicate(OgitorsView *view)

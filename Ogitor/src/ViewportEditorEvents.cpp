@@ -265,7 +265,7 @@ void CViewportEditor::OnMouseMove (Ogre::Vector2 point, unsigned int buttons, bo
             {
                 Ogre::Vector3 vTempPos;
 
-                if(mViewKeyboard[mSpecial.SPK_SNAP] && GetHitPosition(mouseRay, vTempPos, multisel->getAsSingle()->getName()))
+                if(mViewKeyboard[mSpecial.SPK_SNAP_GROUND] && GetHitPosition(mouseRay, vTempPos, multisel->getAsSingle()->getName()))
                 {
                     vNewPos = vTempPos;
                     mLastDerivedPosition = vNewPos;

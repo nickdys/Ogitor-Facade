@@ -49,13 +49,13 @@ Shortcuts            *shortCuts;
 //-------------------------------------------------------------------------------------
 void setupOgre(Ogre::String plugins, Ogre::String config, Ogre::String log)
 {
-    // Create the main ogre object
+    // create the main ogre object
     mOgreRoot = OGRE_NEW Ogre::Root( plugins);
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
     // load additional plugins
-    //const Ogre::String& pluginPathDepends = "../../Dependencies/lib/";
-    //mOgreRoot->loadPlugin(pluginPathDepends + "libCaelum.so");
+    const Ogre::String& pluginPathDepends = "../../Dependencies/lib/";
+    mOgreRoot->loadPlugin(pluginPathDepends + "libCaelum.so");
 #endif
 
     Ogre::LogManager::getSingleton().setLogDetail(Ogre::LL_NORMAL);
@@ -67,7 +67,6 @@ void setupOgre(Ogre::String plugins, Ogre::String config, Ogre::String log)
 
     // Go through all sections & settings in the file
     Ogre::ConfigFile::SectionIterator seci = cf.getSectionIterator();
-    Ogre::ResourceGroupManager::getSingletonPtr()->setLoadingListener(new Ogitors::ResourceLoadingListener());
 
     Ogre::String secName, typeName, archName;
     while (seci.hasMoreElements())
@@ -83,38 +82,33 @@ void setupOgre(Ogre::String plugins, Ogre::String config, Ogre::String log)
         }
     }
 
-    QSettings settings;
-    settings.beginGroup("preferences");
-
-    QString renderer = settings.value("renderSystem", "").toString();
-
-    if(renderer.isEmpty())
-    {
-#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
-        renderer = "Direct3D9 Rendering Subsystem";
-#else
-        renderer = "OpenGL Rendering Subsystem";
-#endif
-        settings.setValue("renderSystem", renderer);
-    }
-
+#if ((OGRE_VERSION_MAJOR * 10) + OGRE_VERSION_MINOR) >= 17
     Ogre::RenderSystemList::const_iterator pRend = mOgreRoot->getAvailableRenderers().begin();
     while (pRend != mOgreRoot->getAvailableRenderers().end())
+#else
+    Ogre::RenderSystemList::const_iterator pRend = mOgreRoot->getAvailableRenderers()->begin();
+    while (pRend != mOgreRoot->getAvailableRenderers()->end())
+#endif
     {
         Ogre::String rName = (*pRend)->getName();
-
-        if (rName == renderer.toStdString())
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+        if (rName == "Direct3D9 Rendering Subsystem")
+#else
+        if (rName == "OpenGL Rendering Subsystem")
+#endif
             break;
-
         pRend++;
     }
 
     Ogre::RenderSystem *rsys = *pRend;
 
+    QSettings settings;
+
+    settings.beginGroup("preferences");
+
     int antialias = settings.value("antiAliasing", 0).toInt();
     bool vsync = settings.value("useVSync", false).toBool();
-    bool azerty = settings.value("useAZERTY", false).toBool();
-    settings.endGroup();
+
 
     // Some standard rendering system configurations
     if(vsync)
@@ -124,11 +118,11 @@ void setupOgre(Ogre::String plugins, Ogre::String config, Ogre::String log)
 
     rsys->setConfigOption("FSAA", Ogre::StringConverter::toString(antialias));
 
-    // Set the rendering system and initialise OGRE
+    // Set the rendering system and Initialise OGRE
     mOgreRoot->setRenderSystem(rsys);
 
     // initialize without creating window
-    mOgreRoot->getRenderSystem()->setConfigOption("Full Screen", "No");
+    mOgreRoot->getRenderSystem()->setConfigOption( "Full Screen", "No" );
     //mOgreRoot->saveConfig();
     mOgreRoot->initialise(false); // don't create a window
 
@@ -141,31 +135,20 @@ void setupOgre(Ogre::String plugins, Ogre::String config, Ogre::String log)
     //tmp->add(QKeySequence(Qt::Key_S).toString(), QString("Move Backward"), "SPK_BACKWARD", Qt::Key_S);
     //tmp->add(QKeySequence(Qt::Key_D).toString(), QString("Move Right"), "SPK_RIGHT", Qt::Key_D);
 
-    if(azerty)
-    {
-        // azerty keys
-        keys.SPK_LEFT = Qt::Key_Q;
-        keys.SPK_RIGHT = Qt::Key_D;
-        keys.SPK_FORWARD = Qt::Key_Z;
-        keys.SPK_BACKWARD = Qt::Key_S;
-        keys.SPK_UP = Qt::Key_E;
-        keys.SPK_DOWN = Qt::Key_A;
-    }
-    else
-    {
-        // normal keys
-        keys.SPK_LEFT = Qt::Key_A;
-        keys.SPK_RIGHT = Qt::Key_D;
-        keys.SPK_FORWARD = Qt::Key_W;
-        keys.SPK_BACKWARD = Qt::Key_S;
-        keys.SPK_UP = Qt::Key_E;
-        keys.SPK_DOWN = Qt::Key_Q;
-    }
-
-    // special keys
+    // normal keys
+    keys.SPK_LEFT = Qt::Key_A;
+    keys.SPK_RIGHT = Qt::Key_D;
+    keys.SPK_FORWARD = Qt::Key_W;
+    keys.SPK_BACKWARD = Qt::Key_S;
+    keys.SPK_UP = Qt::Key_E;
+    keys.SPK_DOWN = Qt::Key_Q;
     keys.SPK_FOCUS_OBJECT = Qt::Key_F;
-    keys.SPK_DELETE = (Qt::Key_Delete & 0xFFF) + 0xFF;
+    // special keys
+    keys.SPK_DELETE = (Qt::Key_Delete & 0xFFF) + 0xFF; 
     keys.SPK_SWITCH_AXIS = (Qt::Key_End & 0xFFF) + 0xFF;
+    // modifiers
+    // space
+    keys.SPK_SNAP_GROUND = Qt::Key_Space;
     // shift
     keys.SPK_CLONE = (Qt::Key_Shift & 0xFFF) + 0xFF;
     keys.SPK_REVERSE_UPDATE = (Qt::Key_Shift & 0xFFF) + 0xFF;
@@ -180,17 +163,7 @@ void setupOgre(Ogre::String plugins, Ogre::String config, Ogre::String log)
     Ogitors::CViewportEditor::SetKeyboard(ViewKeyboard, keys);
 
     mSystem = OGRE_NEW QtOgitorSystem();
-
-    // Read the preferences concerning disabled plugins and pass on to OgitorsRoot
-    Ogre::StringVector disabledPluginPaths;
-    settings.beginGroup("preferences/disabledPlugins");
-    QStringList keyList = settings.childKeys();
-    for(int i = 0; i < keyList.count(); i++)
-        disabledPluginPaths.push_back(settings.value(keyList[i]).toString().toStdString());
-    settings.endGroup();
-    mOgitorsRoot = OGRE_NEW Ogitors::OgitorsRoot(&disabledPluginPaths);
-
-
+    mOgitorsRoot = OGRE_NEW Ogitors::OgitorsRoot();
 }
 //------------------------------------------------------------------------------------
 void readRecentFiles(QSettings& settings)
@@ -250,20 +223,20 @@ int main(int argc, char *argv[])
 
     QDir::setCurrent(a.applicationDirPath());
 
-    // See if we are loading something from the command line.
+    // See if we are loading something from the commandline.
     QString fileArg("");
     QString suffix("");
     QString argument = a.arguments().last();
     QFileInfo info(a.arguments().last());
     if(info.exists() && info.isFile())
     {
-        if(info.suffix() == "ofs")
+        if(info.suffix() == "ogscene")
         {
             // Yes we've got an ogscene file to load.
             fileArg = info.absoluteFilePath();
             suffix = info.suffix();
         }
-        else if(info.baseName() != "qtOgitor" && info.baseName() != "qtOgitor_d")
+        else if(info.baseName() != "qtOgitor" && info.baseName() != "qtOgitor_d"  )
         {
             // We are trying to load something we can't load
             // Exit the application.
@@ -273,8 +246,17 @@ int main(int argc, char *argv[])
         }
     }
 
-    a.setOrganizationName(QString("Ogitor ") + QString(Ogitors::OGITOR_VERSION));
+    a.setOrganizationName("Ogitor");
     a.setApplicationName("qtOgitor");
+
+#if(OGRE_PLATFORM == OGRE_PLATFORM_APPLE)
+    QFile file(":/stylesheets/osx.qss");
+#else
+    QFile file(":/stylesheets/obsidian.qss");
+#endif
+    file.open(QFile::ReadOnly);
+    QString styleSheet = QLatin1String(file.readAll());
+    a.setStyleSheet(styleSheet);
 
     QSettings settings;
     QString languageFile = settings.value("preferences/customLanguage").toString();
@@ -284,10 +266,10 @@ int main(int argc, char *argv[])
 
     if(languageFile != "ogitor_en.qm")
     {
-        QString lang = QString(resourcePath().c_str()) + "languages/qt_" + languageFile;
+        QString lang = "../languages/qt_" + languageFile;
         lang.remove("ogitor_");
 
-        QString lang2 = QString(resourcePath().c_str()) + "languages/" + languageFile;
+        QString lang2 = "../languages/" + languageFile;
 
         if(QFile::exists(lang) && QFile::exists(lang2))
         {
@@ -298,7 +280,7 @@ int main(int argc, char *argv[])
                 a.installTranslator(&ogitorTranslator);
         }
         else
-        {
+        {    
             // If the system-wide Qt translation file is present, load it.
             if(qtTranslator.load("qt_" + QLocale::system().name(),
                 QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
@@ -306,13 +288,13 @@ int main(int argc, char *argv[])
                 a.installTranslator(&qtTranslator);
             }
             // Otherwise: load our own Qt translation file.
-            else if(qtTranslator.load(QString(resourcePath().c_str()) + "languages/qt_" + QLocale::system().name()))
+            else if(qtTranslator.load("../languages/qt_" + QLocale::system().name()))
             {
                 a.installTranslator(&qtTranslator);
             }
 
             // Install qtOgitor translator
-            if(ogitorTranslator.load(QString(resourcePath().c_str()) + "languages/ogitor_" + QLocale::system().name()))
+            if(ogitorTranslator.load("../languages/ogitor_" + QLocale::system().name()))
             {
                 a.installTranslator(&ogitorTranslator);
             }
@@ -339,7 +321,7 @@ int main(int argc, char *argv[])
 
     mOgitorMainWindow = new MainWindow();
     mOgitorMainWindow->show();
-
+    
     mOgitorMainWindow->setApplicationObject(&a);
 
     QString sceneToLoad = "";
@@ -387,4 +369,3 @@ int main(int argc, char *argv[])
 
     return retval;
 }
-//-------------------------------------------------------------------------------------

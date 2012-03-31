@@ -58,7 +58,16 @@ distribution.
     #define TIXML_EXPLICIT
 #endif
 
-#include "OgitorsExports.h"
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+   #ifdef OGITOR_EXPORT
+     #define OgitorExport __declspec (dllexport)
+   #else
+     #define OgitorExport __declspec (dllimport)
+   #endif
+#else
+   #define OgitorExport
+#endif
+
 /*
    TiXmlString is an emulation of a subset of the std::string template.
    Its purpose is to allow compiling TinyXML on compilers with no or poor STL support.

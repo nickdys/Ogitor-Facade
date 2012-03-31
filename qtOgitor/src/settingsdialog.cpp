@@ -44,33 +44,35 @@
 #include "OgitorsSystem.h"
 #include "BaseEditor.h"
 #include "ViewGrid.h"
-#include "mainwindow.hxx"
-#include "ofstreewidget.hxx"
 
 using namespace Ogitors;
 
 const int RES_LOC_DIR = 1;
 const int RES_LOC_ZIP = 2;
 
-extern QString ConvertToQString(Ogre::UTFString& value);
 
+extern QString ConvertToQString(Ogre::UTFString& value);
 //----------------------------------------------------------------------------------
 SettingsDialog::SettingsDialog(QWidget *parent, PROJECTOPTIONS *options) :
 QDialog(parent, Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint)
 {
-    setupUi(this);
+   setupUi(this);
 
-    mOptions = options;
+   connect(buttonBox, SIGNAL(accepted()), this, SLOT(onAccept()));
+   connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+   connect(mBrowseProjectDirButton, SIGNAL(clicked()), this, SLOT(browse()));
 
-    mProjectDirTextBox->setText(mOptions->ProjectDir.c_str());
-    mProjectNameTextBox->setText(mOptions->ProjectName.c_str());
-    mSceneMgrNameMenu->addItem("OctreeSceneManager");
-    mSceneMgrNameMenu->setCurrentIndex(0);
-    mConfigFileTextBox->setText(mOptions->SceneManagerConfigFile.c_str());
-    mTerrainDirTextBox->setText(mOptions->TerrainDirectory.c_str());
+   mOptions = options;
 
-    if(!mOptions->IsNewProject)
-    {
+   mProjectDirTextBox->setText(mOptions->ProjectDir.c_str());
+   mProjectNameTextBox->setText(mOptions->ProjectName.c_str());
+   mSceneMgrNameMenu->addItem("OctreeSceneManager");
+   mSceneMgrNameMenu->setCurrentIndex(0);
+   mConfigFileTextBox->setText(mOptions->SceneManagerConfigFile.c_str());
+   mTerrainDirTextBox->setText(mOptions->TerrainDirectory.c_str());
+
+   if(!mOptions->IsNewProject)
+   {
       mProjectNameTextBox->setText(QApplication::translate("QtOgitorSystem", "<Enter New Name>"));         
       mProjectDirTextBox->setEnabled(false);
       mProjectNameTextBox->setEnabled(false);
@@ -78,85 +80,56 @@ QDialog(parent, Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint)
       mConfigFileTextBox->setEnabled(false);
       mTerrainDirTextBox->setEnabled(false);
       mBrowseProjectDirButton->setEnabled(false);
-    }
+   }
 
-    unsigned int i;
-    QString value;
-    for(i = 0;i < mOptions->ResourceDirectories.size();i++)
-    {
+   unsigned int i;
+   QString value;
+   for(i = 0;i < mOptions->ResourceDirectories.size();i++)
+   {
       value = mOptions->ResourceDirectories[i].c_str();
+      value = value.right(value.length() - 3);
+      if(mOptions->ResourceDirectories[i].find("FS:") == 0)
+      {
+         addResourceLocation(RES_LOC_DIR, value);
+      }
+      else if(mOptions->ResourceDirectories[i].find("ZP:") == 0)
+      {
+         addResourceLocation(RES_LOC_ZIP, value);
+      }
+   }
+   mResourceListBox->installEventFilter(this);
 
-      addResourceLocation(RES_LOC_DIR, value);
-    }
-    mResourceListBox->installEventFilter(this);
+   mSelRectColourWidget = new ColourPickerWidget(this, QColor(mOptions->SelectionRectColour.r * 255, mOptions->SelectionRectColour.g * 255, mOptions->SelectionRectColour.b * 255));   
+   mSelColourWidget = new ColourPickerWidget(this, QColor(mOptions->SelectionBBColour.r * 255, mOptions->SelectionBBColour.g * 255, mOptions->SelectionBBColour.b * 255));   
+   mHighlightColourWidget = new ColourPickerWidget(this, QColor(mOptions->HighlightBBColour.r * 255, mOptions->HighlightBBColour.g * 255, mOptions->HighlightBBColour.b * 255));   
+   mSelectHighlightColourWidget = new ColourPickerWidget(this, QColor(mOptions->SelectHighlightBBColour.r * 255, mOptions->SelectHighlightBBColour.g * 255, mOptions->SelectHighlightBBColour.b * 255));   
+   mSelectionGridLayout->addWidget(mSelRectColourWidget,0,1,1,1);
+   mSelectionGridLayout->addWidget(mSelColourWidget,1,1,1,1);
+   mSelectionGridLayout->addWidget(mHighlightColourWidget,2,1,1,1);
+   mSelectionGridLayout->addWidget(mSelectHighlightColourWidget,3,1,1,1);
 
-    mSelRectColourWidget = new ColourPickerWidget(this, QColor(mOptions->SelectionRectColour.r * 255, mOptions->SelectionRectColour.g * 255, mOptions->SelectionRectColour.b * 255));   
-    mSelColourWidget = new ColourPickerWidget(this, QColor(mOptions->SelectionBBColour.r * 255, mOptions->SelectionBBColour.g * 255, mOptions->SelectionBBColour.b * 255));   
-    mHighlightColourWidget = new ColourPickerWidget(this, QColor(mOptions->HighlightBBColour.r * 255, mOptions->HighlightBBColour.g * 255, mOptions->HighlightBBColour.b * 255));   
-    mSelectHighlightColourWidget = new ColourPickerWidget(this, QColor(mOptions->SelectHighlightBBColour.r * 255, mOptions->SelectHighlightBBColour.g * 255, mOptions->SelectHighlightBBColour.b * 255));   
-    mSelectionGridLayout->addWidget(mSelRectColourWidget,0,1,1,1);
-    mSelectionGridLayout->addWidget(mSelColourWidget,1,1,1,1);
-    mSelectionGridLayout->addWidget(mHighlightColourWidget,2,1,1,1);
-    mSelectionGridLayout->addWidget(mSelectHighlightColourWidget,3,1,1,1);
+   mGridColourWidget = new ColourPickerWidget(this, QColor(mOptions->GridColour.r * 255, mOptions->GridColour.g * 255, mOptions->GridColour.b * 255));   
+   mGridAppearanceLayout->addWidget(mGridColourWidget,1,1,1,1);
 
-    mGridColourWidget = new ColourPickerWidget(this, QColor(mOptions->GridColour.r * 255, mOptions->GridColour.g * 255, mOptions->GridColour.b * 255));   
-    mGridAppearanceLayout->addWidget(mGridColourWidget,1,1,1,1);
+   mGridSpacingMenu->setValue(ViewportGrid::getGridSpacing());
+   mSnapAngleMenu->setValue(0);
+   mSelectionDepthMenu->setValue(mOptions->VolumeSelectionDepth);
 
-    mGridSpacingMenu->setValue(ViewportGrid::getGridSpacing());
-    mSnapAngleMenu->setValue(0);
-    mSelectionDepthMenu->setValue(mOptions->VolumeSelectionDepth);
+   mSelRectColourWidget->setMaximumSize(40,20);
+   mSelRectColourWidget->setMinimumSize(40,20);
+   mSelColourWidget->setMaximumSize(40,20);
+   mSelColourWidget->setMinimumSize(40,20);
+   mHighlightColourWidget->setMaximumSize(40,20);
+   mHighlightColourWidget->setMinimumSize(40,20);
+   mSelectHighlightColourWidget->setMaximumSize(40,20);
+   mSelectHighlightColourWidget->setMinimumSize(40,20);
+   mGridColourWidget->setMaximumSize(40,20);
+   mGridColourWidget->setMinimumSize(40,20);
 
-    mSelRectColourWidget->setMaximumSize(40,20);
-    mSelRectColourWidget->setMinimumSize(40,20);
-    mSelColourWidget->setMaximumSize(40,20);
-    mSelColourWidget->setMinimumSize(40,20);
-    mHighlightColourWidget->setMaximumSize(40,20);
-    mHighlightColourWidget->setMinimumSize(40,20);
-    mSelectHighlightColourWidget->setMaximumSize(40,20);
-    mSelectHighlightColourWidget->setMinimumSize(40,20);
-    mGridColourWidget->setMaximumSize(40,20);
-    mGridColourWidget->setMinimumSize(40,20);
+   tabWidget->setCurrentIndex(0);
 
-    // Initialize auto backup settings
-    if(mOptions->AutoBackupEnabled == true)
-        enableAutoBackupBox->setChecked(true);
-    else
-    {
-        enableAutoBackupBox->setChecked(false);
-        autoBackupStateChanged(Qt::Unchecked);
-    }
-
-    autoBackupTimeSpinBox->setValue(mOptions->AutoBackupPeriod);
-    autoBackupPeriodTypeComboBox->setCurrentIndex(mOptions->AutoBackupPeriodType);
-    autoBackupPathEdit->setText(mOptions->AutoBackupFolder.c_str());
-    autoBackupMaxStoredSpinBox->setValue(mOptions->AutoBackupNumber);
-
-    tabWidget->setCurrentIndex(0);
-
-    // Enable dropping on the widget
-    setAcceptDrops(true);
-
-    connect(buttonBox,                      SIGNAL(accepted()),                         this, SLOT(onAccept()));
-    connect(buttonBox,                      SIGNAL(rejected()),                         this, SLOT(reject()));
-    connect(mBrowseProjectDirButton,        SIGNAL(clicked()),                          this, SLOT(browse()));
-    connect(mSceneMgrNameMenu,              SIGNAL(currentIndexChanged(int)),           this, SLOT(setDirty()));
-    connect(mConfigFileTextBox,             SIGNAL(textChanged(const QString&)),        this, SLOT(setDirty()));
-    connect(mTerrainDirTextBox,             SIGNAL(textChanged(const QString&)),        this, SLOT(setDirty()));
-    connect(mSelectionDepthMenu,            SIGNAL(valueChanged(double)),               this, SLOT(setDirty()));
-    connect(mGridSpacingMenu,               SIGNAL(valueChanged(double)),               this, SLOT(setDirty()));
-    connect(mSnapAngleMenu,                 SIGNAL(valueChanged(double)),               this, SLOT(setDirty()));
-    connect(mSelRectColourWidget,           SIGNAL(colourChanged(Ogre::ColourValue)),   this, SLOT(setDirty()));
-    connect(mSelColourWidget,               SIGNAL(colourChanged(Ogre::ColourValue)),   this, SLOT(setDirty()));
-    connect(mHighlightColourWidget,         SIGNAL(colourChanged(Ogre::ColourValue)),   this, SLOT(setDirty()));
-    connect(mSelectHighlightColourWidget,   SIGNAL(colourChanged(Ogre::ColourValue)),   this, SLOT(setDirty()));
-    connect(mGridColourWidget,              SIGNAL(colourChanged(Ogre::ColourValue)),   this, SLOT(setDirty()));
-    // Auto backup mapping
-    connect(enableAutoBackupBox,            SIGNAL(stateChanged(int)),                  this, SLOT(autoBackupStateChanged(int)));
-    connect(autoBackupTimeSpinBox,          SIGNAL(valueChanged(int)),                  this, SLOT(onAutoBackupValueChanged()));
-    connect(autoBackupPeriodTypeComboBox,   SIGNAL(currentIndexChanged(int)),           this, SLOT(onAutoBackupValueChanged()));
-    connect(autoBackupPathEdit,             SIGNAL(textChanged(const QString&)),        this, SLOT(onAutoBackupValueChanged()));
-    connect(autoBackupMaxStoredSpinBox,     SIGNAL(valueChanged(int)),                  this, SLOT(onAutoBackupValueChanged()));
-    connect(autoBackupPathButton,           SIGNAL(clicked()),                          this, SLOT(onSelectPathForBackup()));
+   // Enable dropping on the widget
+   setAcceptDrops(true);
 }
 //----------------------------------------------------------------------------------
 SettingsDialog::~SettingsDialog()
@@ -165,7 +138,7 @@ SettingsDialog::~SettingsDialog()
 //----------------------------------------------------------------------------------
 void SettingsDialog::browse()
 {
-   QString path = QFileDialog::getExistingDirectory(QApplication::activeWindow(), "", QApplication::applicationDirPath()
+   QString path = QFileDialog::getExistingDirectory(QApplication::activeWindow(), "",QApplication::applicationDirPath()
 #if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
       , QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
 #else
@@ -225,78 +198,114 @@ void SettingsDialog::addResourceLocation(int loctype, QString path)
       mResourceListBox->addItem(path);
       mResourceFileTypes.push_back(loctype);
    }
-
-   setDirty();
 }
 //----------------------------------------------------------------------------------
 void SettingsDialog::onAddDirectory()
 {
    QString path;
    if(lastDirPath == "")    
-      path = "/";
+      path = QApplication::applicationDirPath();
    else
       path = lastDirPath;
 
-   OfsTreeWidget *treeWidget = new OfsTreeWidget(0, OfsTreeWidget::CAP_SHOW_DIRS, lastDirPath.toStdString());
-   QGridLayout *layout = new QGridLayout();
-
-   QPushButton *butOk = new QPushButton(QString("OK"));
-   QPushButton *butCancel = new QPushButton(QString("Cancel"));
-
-   layout->addWidget(treeWidget, 0, 0, 1, 3);
-   layout->addWidget(butOk, 1, 0);
-   layout->addWidget(butCancel, 1, 2);
-
-   layout->setRowStretch(0, 1);
-   layout->setRowStretch(1, 0);
-   layout->setColumnStretch(0, 0);
-   layout->setColumnStretch(1, 1);
-   layout->setColumnStretch(2, 0);
-   
-   QDialog dlg;
-   dlg.setLayout(layout);
-   dlg.setMinimumSize(QSize(300,400));
-
-   connect(butOk, SIGNAL(clicked()), &dlg, SLOT(accept()));
-   connect(butCancel, SIGNAL(clicked()), &dlg, SLOT(reject()));
-
-   if(dlg.exec() == QDialog::Accepted)
+   path = QFileDialog::getExistingDirectory(QApplication::activeWindow(), "", path
+#if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
+      , QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
+#else
+      );
+#endif
+   if(!path.isEmpty())
    {
-       path = treeWidget->getSelected().c_str();
-       if(!path.isEmpty())
-       {
-          addResourceLocation(RES_LOC_DIR, path);
-          lastDirPath = path;
-       }
+      addResourceLocation(RES_LOC_DIR, path);
+      lastDirPath = path;
    }
 }
 
 //----------------------------------------------------------------------------------
-void SettingsDialog::onRemoveEntry()
+void SettingsDialog::onAddDirectoryRecursive()
 {
-    if(mResourceListBox->currentIndex().isValid())
-    {
-        int index = mResourceListBox->currentIndex().row();
-        if(index >= 0)
-        {
-            mResourceFileTypes.erase(mResourceFileTypes.begin() + index);
-            mResourceListBox->takeItem(index);
-        }
-    }
+   QString path;
+   if(lastDirPath == "")    
+      path = QApplication::applicationDirPath();
+   else
+      path = lastDirPath;
+
+   path = QFileDialog::getExistingDirectory(QApplication::activeWindow(), "", path
+#if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
+      , QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
+#else
+      );
+#endif
+
+   // DO NOT MAKE RELATIVE CONVERSION HERE, IT WILL BE DONE WHEN OK IS CLICKED, 
+   // THE PROJECT DIRECTORY MAY NOT BE DETERMINED AT THIS POINT
+   if(!path.isEmpty())
+   {
+      lastDirPath = path;
+
+      addResourceLocation(RES_LOC_DIR, path);
+
+      QDirIterator it(path, QDir::AllDirs, QDirIterator::Subdirectories);
+      while (it.hasNext()) 
+      {
+         QString dir = it.next();        
+         QFileInfo inf(dir);
+
+         if(!dir.endsWith("."))
+         {
+            addResourceLocation(RES_LOC_DIR, dir);
+         }
+      }
+   }
+}
+
+//----------------------------------------------------------------------------------
+void SettingsDialog::onAddArchive()
+{
+   QString path;
+   if(lastDirPath == "")    
+      path = QApplication::applicationDirPath();
+   else
+      path = lastDirPath;
+
+   path = QFileDialog::getOpenFileName(QApplication::activeWindow(), tr("Archive Files"), path, QString(tr("Zip Files (*.zip)")), 0
+#if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
+      , QFileDialog::DontUseNativeDialog);
+#else
+      );
+#endif
+   if(!path.isEmpty())
+   {
+      addResourceLocation(RES_LOC_ZIP, path);
+   }
 }
 //----------------------------------------------------------------------------------
-bool SettingsDialog::eventFilter(QObject * watched, QEvent * e)
+void SettingsDialog::onRemoveEntry()
+{
+   if(mResourceListBox->currentIndex().isValid())
+   {
+      int index = mResourceListBox->currentIndex().row();
+      if(index >= 0)
+      {
+         mResourceFileTypes.erase(mResourceFileTypes.begin() + index);
+         mResourceListBox->takeItem(index);
+      }
+   }
+}
+//----------------------------------------------------------------------------------
+bool SettingsDialog::eventFilter ( QObject * watched, QEvent * e )
 {
     if(watched == mResourceListBox)
     {
         if(e->type() == QEvent::ContextMenu)
         {
             QMenu *menu = new QMenu(this);
-            QAction *tempAct = menu->addAction(tr("Add Directory"), this, SLOT(onAddDirectory()));
-            tempAct->setEnabled(!mOptions->IsNewProject);
-            tempAct = menu->addAction(tr("Remove Entry"), this, SLOT(onRemoveEntry()));
-            tempAct->setEnabled(mResourceListBox->currentIndex().row() >= 0);
-            
+            menu->addAction(tr("Add Directory"), this, SLOT(onAddDirectory()));
+            menu->addAction(tr("Add Directories Recursively"), this, SLOT(onAddDirectoryRecursive()));
+            menu->addAction(tr("Add Archive"), this, SLOT(onAddArchive()));
+            QAction *removeAction = menu->addAction(tr("Remove Entry"), this, SLOT(onRemoveEntry()));
+            removeAction->setEnabled(mResourceListBox->currentIndex().row() >= 0);
+
             menu->exec(QCursor::pos());
             delete menu;
             e->ignore();
@@ -318,162 +327,157 @@ bool SettingsDialog::eventFilter(QObject * watched, QEvent * e)
 //----------------------------------------------------------------------------------
 void SettingsDialog::onAccept()
 {
-    if(mOptions->IsNewProject)
-    {
-        QString ProjectDir = mProjectDirTextBox->text();
-        QString ProjectName = mProjectNameTextBox->text();
-        QString SceneManagerName = mSceneMgrNameMenu->itemText(mSceneMgrNameMenu->currentIndex());
-        QString SceneManagerConfigFile = mConfigFileTextBox->text();
-        QString TerrainDir = mTerrainDirTextBox->text();
+   if(mOptions->IsNewProject)
+   {
+      QString ProjectDir = mProjectDirTextBox->text();
+      QString ProjectName = mProjectNameTextBox->text();
+      QString SceneManagerName = mSceneMgrNameMenu->itemText(mSceneMgrNameMenu->currentIndex());
+      QString SceneManagerConfigFile = mConfigFileTextBox->text();
+      QString TerrainDir = mTerrainDirTextBox->text();
 
-        if(!IsValidName(ProjectDir, qApp->translate("SettingsDialog", "Project Directory")))
-            return;
-        if(!IsValidName(ProjectName, qApp->translate("SettingsDialog", "Project Name"), "\\/"))
-            return;
-        if(!IsValidName(TerrainDir, qApp->translate("SettingsDialog", "Terrain Directory")))
-            return;
+      if(!IsValidName(ProjectDir, qApp->translate("SettingsDialog", "Project Directory")))
+         return;
+      if(!IsValidName(ProjectName, qApp->translate("SettingsDialog", "Project Name"), "\\/"))
+         return;
+      if(!IsValidName(TerrainDir, qApp->translate("SettingsDialog", "Terrain Directory")))
+         return;
 
-        Ogre::String sProjectDir = OgitorsUtils::QualifyPath(QString(ProjectDir + QString("/") + ProjectName).toStdString());
+      Ogre::String sProjectDir = OgitorsUtils::QualifyPath(QString(ProjectDir + QString("/") + ProjectName).toStdString());
 
-        OgitorsSystem::getSingletonPtr()->MakeDirectory(sProjectDir);
+      OgitorsSystem::getSingletonPtr()->MakeDirectory(sProjectDir);
 
-        mOptions->CreatedIn = ""; 
-        mOptions->ProjectDir = sProjectDir;
-        mOptions->ProjectName = ProjectName.toStdString();
-        mOptions->SceneManagerName = SceneManagerName.toStdString();
-        mOptions->SceneManagerConfigFile = SceneManagerConfigFile.toStdString();
-        mOptions->TerrainDirectory = TerrainDir.toStdString();
-    }
+      mOptions->CreatedIn = ""; 
+      mOptions->ProjectDir = sProjectDir;
+      mOptions->ProjectName = ProjectName.toStdString();
+      mOptions->SceneManagerName = SceneManagerName.toStdString();
+      mOptions->SceneManagerConfigFile = SceneManagerConfigFile.toStdString();
+      mOptions->TerrainDirectory = TerrainDir.toStdString();
+   }
 
-    mOptions->ResourceDirectories.clear();
+   mOptions->ResourceDirectories.clear();
 
-    Ogre::String pathTo = mOptions->ProjectDir;
+   Ogre::String pathTo = mOptions->ProjectDir;
 
-    HashMap<Ogre::String, int> resDirMap;
+   HashMap<Ogre::String, int> resDirMap;
 
-    unsigned int i;
-    unsigned int itemcount = mResourceListBox->count();
-    for(i = 0;i < itemcount;i++)
-    { 
-        Ogre::String strTemp = mResourceListBox->item(i)->text().toStdString();
-        int stype = mResourceFileTypes[i];
+   unsigned int i;
+   unsigned int itemcount = mResourceListBox->count();
+   for(i = 0;i < itemcount;i++)
+   { 
+      Ogre::String strTemp = mResourceListBox->item(i)->text().toStdString();
+      int stype = mResourceFileTypes[i];
+      if(strTemp.substr(0,1) != ".")
+         strTemp = OgitorsUtils::GetRelativePath(pathTo,strTemp);
 
-        Ogre::String val;
-        if(stype == RES_LOC_DIR)
-        {
-            val = strTemp;
-            if(resDirMap.find(val) == resDirMap.end())
-            {
-                resDirMap[val] = 0;
-            }
-        }
-    }
+      Ogre::String val;
+      if(stype == RES_LOC_DIR)
+      {
+         val = Ogre::String("FS:") + strTemp;
+         if(resDirMap.find(val) == resDirMap.end())
+         {
+            resDirMap[val] = 0;
+         }
+      }
+      else if(stype == RES_LOC_ZIP)
+      {   
+         val = Ogre::String("ZP:") + strTemp;
+         if(resDirMap.find(val) == resDirMap.end())
+         {
+            resDirMap[val] = 0;
+         }
+      }
+   }
 
-    HashMap<Ogre::String, int>::const_iterator rit = resDirMap.begin();
-    while(rit != resDirMap.end())
-    {
-        mOptions->ResourceDirectories.push_back(rit->first);
-        rit++;
-    }
+   HashMap<Ogre::String, int>::const_iterator rit = resDirMap.begin();
+   while(rit != resDirMap.end())
+   {
+      mOptions->ResourceDirectories.push_back(rit->first);
+      rit++;
+   }
 
-    mOptions->SelectionRectColour = mSelRectColourWidget->getColour();
-    mOptions->SelectionBBColour = mSelColourWidget->getColour();
-    mOptions->HighlightBBColour = mHighlightColourWidget->getColour();
-    mOptions->SelectHighlightBBColour = mSelectHighlightColourWidget->getColour();
-    mOptions->GridColour = mGridColourWidget->getColour();
-    mOptions->GridSpacing = mGridSpacingMenu->value();
-    mOptions->SnapAngle = mSnapAngleMenu->value();
-    mOptions->VolumeSelectionDepth = mSelectionDepthMenu->value();
+   mOptions->SelectionRectColour = mSelRectColourWidget->getColour();
+   mOptions->SelectionBBColour = mSelColourWidget->getColour();
+   mOptions->HighlightBBColour = mHighlightColourWidget->getColour();
+   mOptions->SelectHighlightBBColour = mSelectHighlightColourWidget->getColour();
+   mOptions->GridColour = mGridColourWidget->getColour();
+   mOptions->GridSpacing = mGridSpacingMenu->value();
+   mOptions->SnapAngle = mSnapAngleMenu->value();
+   mOptions->VolumeSelectionDepth = mSelectionDepthMenu->value();
 
-    if(enableAutoBackupBox->checkState() == Qt::Checked && autoBackupPathEdit->text().length() == 0)
-    {
-        QMessageBox::information(QApplication::activeWindow(), "Ogitor", tr("No auto backup location specified.") + "\n" + tr("Auto backup will therefore be disabled."));
-        mOptions->AutoBackupEnabled = false;
-    }
-    else if(enableAutoBackupBox->checkState() == Qt::Checked)
-    {
-        QDir dir = QDir(autoBackupPathEdit->text());
-        if(dir.exists())
-            mOptions->AutoBackupEnabled = true;
-        else
-        {
-            QMessageBox::information(QApplication::activeWindow(), "Ogitor", tr("The specified directory does not exist.") + "\n" + tr("Auto backup will therefore be disabled."));
-            mOptions->AutoBackupEnabled = false;
-        }
-    }
-
-    mOptions->AutoBackupFolder = autoBackupPathEdit->text().toStdString();
-    mOptions->AutoBackupNumber = autoBackupMaxStoredSpinBox->value();
-    mOptions->AutoBackupPeriodType = autoBackupPeriodTypeComboBox->currentIndex();
-    mOptions->AutoBackupPeriod = autoBackupTimeSpinBox->value();
-
-    // Adjust auto backup timer
-    if(mOptions->AutoBackupPeriodType == 0)
-        // Minutes -> value (in minutes) * 60 (to convert to seconds) * 1000 (to convert to milli-seconds)
-        mOgitorMainWindow->getAutoBackupTimer()->setInterval(mOptions->AutoBackupPeriod * 60 * 1000);
-    else if(mOptions->AutoBackupPeriodType == 1)
-        // Hours -> value (in hours) * 60 (to convert to minutes ) * 60 (to convert to seconds) * 1000 (to convert to milli-seconds)
-        mOgitorMainWindow->getAutoBackupTimer()->setInterval(mOptions->AutoBackupPeriod * 60 *  60 * 1000);
-
-    if(mOptions->AutoBackupEnabled)
-        mOgitorMainWindow->getAutoBackupTimer()->start();
-    else
-        mOgitorMainWindow->getAutoBackupTimer()->stop();
-
-    accept();
+   accept();
 }
 //----------------------------------------------------------------------------------
-void SettingsDialog::autoBackupStateChanged(int state)
+void SettingsDialog::dragEnterEvent(QDragEnterEvent * e)
 {
-    if(state == Qt::Unchecked)
-    {
-        autoBackupTimeSpinBox->setEnabled(false);
-        autoBackupPeriodTypeComboBox->setEnabled(false);
-        autoBackupPathEdit->setEnabled(false);
-        autoBackupPathButton->setEnabled(false);
-        autoBackupMaxStoredSpinBox->setEnabled(false);
+   // Only accept drags on the resources tab
+   if(tabWidget->currentIndex() != 1)
+   {
+      e->ignore();
+      return;
+   }
 
-        mOptions->AutoBackupEnabled = false;
-    }
-    else if(state == Qt::Checked)
-    {
-        autoBackupTimeSpinBox->setEnabled(true);
-        autoBackupPeriodTypeComboBox->setEnabled(true);
-        autoBackupPathEdit->setEnabled(true);
-        autoBackupPathButton->setEnabled(true);
-        autoBackupMaxStoredSpinBox->setEnabled(true);
+   // Get the filenames
+   QStringList filenames = getFilenames(e->mimeData());
 
-        mOptions->AutoBackupEnabled = true;
-    }
+   // Don't accept empty drags
+   if(filenames.empty())
+   {
+      e->ignore();
+      return;
+   }
 
-    setDirty();
-}
-//----------------------------------------------------------------------------------------
-void SettingsDialog::onAutoBackupValueChanged()
-{
-    mOptions->AutoBackupFolder      = autoBackupPathEdit->text().toStdString();
-    mOptions->AutoBackupNumber      = autoBackupMaxStoredSpinBox->value();
-    mOptions->AutoBackupPeriod      = autoBackupTimeSpinBox->value();
-    mOptions->AutoBackupPeriodType  = autoBackupPeriodTypeComboBox->currentIndex();
+   // Accept when only directories and zip-files are being dragged
+   for(int i = 0; i < filenames.size(); ++i)
+   {
+      QFileInfo file(filenames.at(i));
+      QString extension = file.suffix().toLower();
 
-    setDirty();
+      if(!file.isDir() && extension != "zip")
+      {
+         e->ignore();
+         return;
+      }
+   }
+   e->accept();
 }
 //----------------------------------------------------------------------------------
-void SettingsDialog::setDirty()
+void SettingsDialog::dropEvent(QDropEvent * e)
 {
-    OgitorsRoot::getSingletonPtr()->SetSceneModified(true);
+   // This should only occur when the resource tab is active
+   assert(tabWidget->currentIndex() == 1);
+
+   // Get the dropped filenames
+   QStringList filenames = getFilenames(e->mimeData());
+
+   if(filenames.empty())
+      e->ignore();
+
+   // Handle the dropped items
+   for(int i = 0; i < filenames.size(); ++i)
+   {
+      // All dropped items should be directories
+      QFileInfo file(filenames.at(i));
+      QString extension = file.suffix().toLower();
+
+      if(file.isDir())
+      {
+         addResourceLocation(RES_LOC_DIR, filenames.at(i));
+      }
+      else if(extension == "zip")
+      {
+         addResourceLocation(RES_LOC_ZIP, filenames.at(i));
+      }
+   }
 }
 //----------------------------------------------------------------------------------
-void SettingsDialog::onSelectPathForBackup()
+QStringList SettingsDialog::getFilenames(const QMimeData * data)
 {
-    const QString dir = OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectDir.c_str();
-    QString path = QFileDialog::getExistingDirectory(QApplication::activeWindow(), "Backup storage location", dir
-#if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
-        , QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
-#else
-        );
-#endif
-    if(!path.isEmpty())
-        autoBackupPathEdit->setText(path);
+   QStringList result;
+
+   QList<QUrl> urls = data->urls();
+   for(int i = 0; i < urls.size(); ++i)
+      result.push_back(urls.at(i).toLocalFile());
+
+   return result;
 }
 //----------------------------------------------------------------------------------

@@ -51,10 +51,9 @@
 #include "tinyxml.h"
 #include "OgreStreamSerialiser.h"
 #include "OgitorsUndoManager.h"
-#include "OFSDataStream.h"
 
-#include "PagedGeometry.h"
-#include "GrassLoader.h"
+#include "PAGEDGEOMETRY/PagedGeometry.h"
+#include "PAGEDGEOMETRY/GrassLoader.h"
 
 #define MAX_LAYERS_ALLOWED 6
 
@@ -65,17 +64,22 @@ using namespace Ogitors;
 void CTerrainPageEditor::_saveGrass(Ogre::String pathPrefix)
 {
     Ogre::TerrainGroup *terGroup = static_cast<Ogre::TerrainGroup*>(mParentEditor->get()->getHandle());
-    Ogre::String filename = pathPrefix + terGroup->generateFilename(mPageX->get(), mPageY->get());
+    Ogre::String filename = mOgitorsRoot->GetProjectOptions()->ProjectDir + pathPrefix + terGroup->generateFilename(mPageX->get(), mPageY->get());
+
+    filename = OgitorsUtils::QualifyPath(filename);
 
     Ogre::String denmapname = filename.substr(0, filename.size() - 4) + "_density.tga";
 
     if(pathPrefix == "/Temp/tmp")
     {
-        mTempDensityFileName = pathPrefix + Ogre::StringConverter::toString(mObjectID->get()) + "_density.tga";
+        if(!mTempDensityFileName.empty())
+            mSystem->DeleteFile(mTempDensityFileName);
+        mTempDensityFileName = mOgitorsRoot->GetProjectOptions()->ProjectDir + pathPrefix + Ogre::StringConverter::toString(mObjectID->get()) + "_density.tga";
+        mTempDensityFileName = OgitorsUtils::QualifyPath(mTempDensityFileName);
         denmapname = mTempDensityFileName;
     }
 
-    OgitorsUtils::SaveImageOfs(mPGDensityMap, denmapname);
+    mPGDensityMap.save(denmapname);
 
     mPGModified = false;
 }
@@ -99,7 +103,7 @@ int CTerrainPageEditor::_getEmptyGrassLayer()
     bool isFull;
 
     unsigned int mDensityMapArea = mPGDensityMap.getWidth() * mPGDensityMap.getHeight();
-
+    
     for(int i = 0;i < 4;i++)
     {
         if(mPGActive[i]->get())
@@ -114,7 +118,7 @@ int CTerrainPageEditor::_getEmptyGrassLayer()
                     break;
                 }
             }
-
+ 
             if(!isFull)
                 return i;
         }
@@ -151,23 +155,22 @@ void CTerrainPageEditor::_loadGrassLayers()
     {
         if(mTempDensityFileName.empty())
         {
-            mTempDensityFileName = "/Temp/tmp" + Ogre::StringConverter::toString(mObjectID->get()) + "_density.tga";
+            mTempDensityFileName = mOgitorsRoot->GetProjectOptions()->ProjectDir + "/Temp/tmp" + Ogre::StringConverter::toString(mObjectID->get()) + "_density.tga";
+            mTempDensityFileName = OgitorsUtils::QualifyPath(mTempDensityFileName);
         }
 
         denmapname = mTempDensityFileName;
     }
     else
     {
-        denmapname = "/Terrain/" + terGroup->generateFilename(mPageX->get(), mPageY->get());
+        denmapname = mOgitorsRoot->GetProjectOptions()->ProjectDir + "/Terrain/" + terGroup->generateFilename(mPageX->get(), mPageY->get());
+        denmapname = OgitorsUtils::QualifyPath(denmapname);
         denmapname = denmapname.substr(0, denmapname.size() - 4) + "_density.tga";
     }
 
-    OFS::OFSHANDLE *denmapHandle = new OFS::OFSHANDLE();
-
-    mOgitorsRoot->GetProjectFile()->openFile(*denmapHandle, denmapname.c_str());
-
-    Ogre::DataStreamPtr stream = Ogre::DataStreamPtr(OGRE_NEW OfsDataStream(mOgitorsRoot->GetProjectFile(), denmapHandle));
-
+    std::fstream fstr(denmapname.c_str(), std::ios::in|std::ios::binary);
+    Ogre::DataStreamPtr stream = Ogre::DataStreamPtr(OGRE_NEW Ogre::FileStreamDataStream(&fstr, false));
+    
     try
     {
         mPGDensityMap.load(stream);
@@ -177,9 +180,9 @@ void CTerrainPageEditor::_loadGrassLayers()
         int densize = parentEditor->getGrassDensityMapSize();
         Ogre::uchar *data = OGRE_ALLOC_T(Ogre::uchar, densize * densize * 4, Ogre::MEMCATEGORY_GENERAL);
         memset(data, 0, densize * densize * 4);
-
+        
         mPGDensityMap.loadDynamicImage(data, densize, densize, 1, Ogre::PF_A8R8G8B8, true);
-        OgitorsUtils::SaveImageOfs(mPGDensityMap, denmapname);
+        mPGDensityMap.save(denmapname);
     }
 
     stream.setNull();
@@ -187,9 +190,9 @@ void CTerrainPageEditor::_loadGrassLayers()
     Ogre::AxisAlignedBox bBox = mHandle->getWorldAABB();
     TBounds bounds(bBox.getMinimum().x, bBox.getMinimum().z, bBox.getMaximum().x, bBox.getMaximum().z);
 
-    Ogre::TexturePtr denptr = Ogre::TextureManager::getSingletonPtr()->createOrRetrieve(mName->get() + "_densitymap", PROJECT_TEMP_RESOURCE_GROUP).first;
+    Ogre::TexturePtr denptr = Ogre::TextureManager::getSingletonPtr()->createOrRetrieve(mName->get() + "_densitymap", "ProjectTemp").first;
     denptr->loadImage(mPGDensityMap);
-
+    
     for(int i = 0;i < 4;i++)
     {
         if(mPGActive[i]->get())
@@ -200,15 +203,15 @@ void CTerrainPageEditor::_loadGrassLayers()
             mPGLayers[i]->setLightingEnabled(true);
             mPGLayers[i]->setMinimumSize(mPGMinSize[i]->get().x, mPGMinSize[i]->get().y);
             mPGLayers[i]->setMaximumSize(mPGMaxSize[i]->get().x, mPGMaxSize[i]->get().y);
-            mPGLayers[i]->setAnimationEnabled(mPGAnimate[i]->get());
+            mPGLayers[i]->setAnimationEnabled(mPGAnimate[i]->get());        
             mPGLayers[i]->setSwayDistribution(mPGSwayDistribution[i]->get());
-            mPGLayers[i]->setSwayLength(mPGSwayLength[i]->get());
-            mPGLayers[i]->setSwaySpeed(mPGSwaySpeed[i]->get());
-            mPGLayers[i]->setDensity(mPGDensity[i]->get());
-
+            mPGLayers[i]->setSwayLength(mPGSwayLength[i]->get());            
+            mPGLayers[i]->setSwaySpeed(mPGSwaySpeed[i]->get());                
+            mPGLayers[i]->setDensity(mPGDensity[i]->get());                
+          
             mPGLayers[i]->setDensityMap(denptr, static_cast<Forests::MapChannel>(CHANNEL_RED + i));
             //layer->setColorMap(mHandle->getCompositeMap());
-            mPGLayers[i]->setFadeTechnique(static_cast<Forests::FadeTechnique>(mPGFadeTech[i]->get()));
+            mPGLayers[i]->setFadeTechnique(static_cast<Forests::FadeTechnique>(mPGFadeTech[i]->get()));    
             mPGLayers[i]->setRenderTechnique(static_cast<Forests::GrassTechnique>(mPGGrassTech[i]->get()));
             mPGLayers[i]->setMapBounds(bounds);
         }
@@ -220,7 +223,7 @@ void CTerrainPageEditor::_loadGrassLayers()
 void CTerrainPageEditor::_unloadGrassLayers()
 {
     CTerrainGroupEditor *parentEditor = static_cast<CTerrainGroupEditor*>(mParentEditor->get());
-
+    
     for(int i = 0; i < 4;i++)
     {
         if(mPGLayers[i])
@@ -281,7 +284,7 @@ void CTerrainPageEditor::updateGrassLayer(unsigned int layerID)
         Ogre::PixelBox pbox = dmap->getPixelBox();
         Ogre::uchar *data = static_cast<Ogre::uchar*>(dmap->getPixelBox().data);
         Ogre::uchar *data2 = mPGDensityMap.getData();
-
+        
         int wsize = dmap->getPixelBox().getWidth();
 
         unsigned char rgbaShift[4];
@@ -309,7 +312,7 @@ void CTerrainPageEditor::updateGrassLayer(unsigned int layerID)
     float posT = (float)mPGDirtyRect.top / (float)mPGDensityMap.getWidth() * mHandle->getWorldSize();
     float posR = (float)mPGDirtyRect.right / (float)mPGDensityMap.getWidth() * mHandle->getWorldSize();
     float posB = (float)mPGDirtyRect.bottom / (float)mPGDensityMap.getWidth() * mHandle->getWorldSize();
-
+    
 
     Ogre::Vector3 pos = mPosition->get();
 
@@ -332,7 +335,7 @@ bool CTerrainPageEditor::_setPGActive(OgitorsPropertyBase* property, const bool&
     {
         CTerrainGroupEditor *parentEditor = static_cast<CTerrainGroupEditor*>(mParentEditor->get());
         int idx = property->getTag();
-
+    
         if(mPGMaterial[idx]->get().empty())
         {
             mSystem->DisplayMessageDialog(OTR("You must first specify a plant material!!"), DLGTYPE_OK);
@@ -344,46 +347,25 @@ bool CTerrainPageEditor::_setPGActive(OgitorsPropertyBase* property, const bool&
             Ogre::AxisAlignedBox bBox = mHandle->getWorldAABB();
             TBounds bounds(bBox.getMinimum().x, bBox.getMinimum().z, bBox.getMaximum().x, bBox.getMaximum().z);
 
-            Ogre::TexturePtr denptr = Ogre::TextureManager::getSingletonPtr()->getByName(mName->get() + "_densitymap", PROJECT_TEMP_RESOURCE_GROUP);
-
+            Ogre::TexturePtr denptr = Ogre::TextureManager::getSingletonPtr()->getByName(mName->get() + "_densitymap", "ProjectTemp");
+            
             mPGLayers[idx] = parentEditor->getGrassLoaderHandle()->addLayer(mPGMaterial[idx]->get());
 
             //Configure the grass layer properties (size, density, animation properties, fade settings, etc.)
             mPGLayers[idx]->setLightingEnabled(true);
             mPGLayers[idx]->setMinimumSize(mPGMinSize[idx]->get().x, mPGMinSize[idx]->get().y);
             mPGLayers[idx]->setMaximumSize(mPGMaxSize[idx]->get().x, mPGMaxSize[idx]->get().y);
-            mPGLayers[idx]->setAnimationEnabled(mPGAnimate[idx]->get());
+            mPGLayers[idx]->setAnimationEnabled(mPGAnimate[idx]->get());        
             mPGLayers[idx]->setSwayDistribution(mPGSwayDistribution[idx]->get());
-            mPGLayers[idx]->setSwayLength(mPGSwayLength[idx]->get());
-            mPGLayers[idx]->setSwaySpeed(mPGSwaySpeed[idx]->get());
-            mPGLayers[idx]->setDensity(mPGDensity[idx]->get());
-
+            mPGLayers[idx]->setSwayLength(mPGSwayLength[idx]->get());            
+            mPGLayers[idx]->setSwaySpeed(mPGSwaySpeed[idx]->get());                
+            mPGLayers[idx]->setDensity(mPGDensity[idx]->get());                
+          
             mPGLayers[idx]->setDensityMap(denptr, static_cast<Forests::MapChannel>(CHANNEL_RED + idx));
             //layer->setColorMap(mHandle->getCompositeMap());
-            mPGLayers[idx]->setFadeTechnique(static_cast<Forests::FadeTechnique>(mPGFadeTech[idx]->get()));
+            mPGLayers[idx]->setFadeTechnique(static_cast<Forests::FadeTechnique>(mPGFadeTech[idx]->get()));    
             mPGLayers[idx]->setRenderTechnique(static_cast<Forests::GrassTechnique>(mPGGrassTech[idx]->get()));
             mPGLayers[idx]->setMapBounds(bounds);
-
-            
-            int mapsize = parentEditor->getGrassDensityMapSize();
-            Ogre::uchar *data_src = mPGDensityMap.getData();
-
-            unsigned char rgbaShift[4];
-            Ogre::PixelUtil::getBitShifts(mPGDensityMap.getFormat(), rgbaShift);
-            int pos = rgbaShift[idx] / 8;
-
-            Forests::DensityMap *dmap = mPGLayers[idx]->getDensityMap();
-            if(dmap)
-            {
-                Ogre::PixelBox pbox = dmap->getPixelBox();
-                Ogre::uchar *data_dest = static_cast<Ogre::uchar*>(dmap->getPixelBox().data);
-
-                for(int i = 0;i < mapsize * mapsize;i++)
-                {
-                    data_dest[i] = data_src[pos];
-                    pos += 4;
-                }
-            }
         }
         else
         {
@@ -395,7 +377,7 @@ bool CTerrainPageEditor::_setPGActive(OgitorsPropertyBase* property, const bool&
                 mPGLayerData[idx] = 0;
             }
         }
-
+        
         _refreshGrassGeometry();
 
         return true;
@@ -409,7 +391,7 @@ void CTerrainPageEditor::_refreshGrassGeometry(Ogre::Rect *rect)
     if(mHandle && mHandle->isLoaded())
     {
         CTerrainGroupEditor *parentEditor = static_cast<CTerrainGroupEditor*>(mParentEditor->get());
-
+        
         if(rect)
         {
             TBounds bounds(rect->left, rect->top, rect->right, rect->bottom);

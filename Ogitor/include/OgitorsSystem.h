@@ -101,34 +101,11 @@ namespace Ogitors
         */
         virtual void GetFileList(Ogre::String path, Ogre::StringVector &list) = 0;
         /**
-        * Fetches a list of directories in specified directory
-        * @param path path which is to be enumerated with dirs
-        * @param list a list to place directory names into
-        */
-        virtual void GetDirList(Ogre::String path, Ogre::StringVector &list) = 0;
-        /**
         * Displays "Select Directory" dialog
         * @param title title of the dialog
         * @return name of selected directory
         */
         virtual Ogre::String DisplayDirectorySelector(Ogre::UTFString title) = 0;
-        /**
-        * Displays Progress dialog
-        * @param title title of the dialog
-        * @param min minimum value of progress bar
-        * @param max maximum value of progress bar
-        * @param value current value of progress bar
-        */
-        virtual void DisplayProgressDialog(Ogre::UTFString title, int min, int max, int value) = 0;
-        /**
-        * Hides Progress dialog
-        */
-        virtual void HideProgressDialog() = 0;
-        /**
-        * Updates Progress dialog
-        * @param value current value of progress bar
-        */
-        virtual void UpdateProgressDialog(int value) = 0;
         /**
         * Displays "Open File" dialog
         * @param title title of the dialog
@@ -162,12 +139,6 @@ namespace Ogitors
         * @return true if dialog' result was accepted, otherwise false
         */
         virtual bool         DisplayImportHeightMapDialog(Ogre::NameValuePairList &params) = 0;
-        /**
-        * Displays euclidean transform dialog
-        * @param params yaw, pitch, roll values as parameters
-        * @return true if dialog' result was accepted, otherwise false
-        */
-        virtual bool         DisplayEuclidDialog(Ogre::NameValuePairList &params) = 0;
         /**
         * Displays blendmap calculation dialog
         * @param params additional blendmap parameters needed
@@ -333,25 +304,9 @@ namespace Ogitors
         */
         virtual void GetFileList(Ogre::String path, Ogre::StringVector &list) {list.clear();};
         /**
-        * @copydoc OgitorsSystem::GetDirList(Ogre::String, Ogre::StringVector&)
-        */
-        virtual void GetDirList(Ogre::String path, Ogre::StringVector &list) {list.clear();};
-        /**
         * @copydoc OgitorsSystem::DisplayDirectorySelector(Ogre::UTFString)
         */
         virtual Ogre::String DisplayDirectorySelector(Ogre::UTFString title) {return "";};
-        /**
-        * @copydoc OgitorsSystem::DisplayProgressDialog(Ogre::UTFString, int, int, int)
-        */
-        virtual void DisplayProgressDialog(Ogre::UTFString title, int min, int max, int value) {};
-        /**
-        * @copydoc OgitorsSystem::HideProgressDialog()
-        */
-        virtual void HideProgressDialog() {};
-        /**
-        * @copydoc OgitorsSystem::UpdateProgressDialog(int)
-        */
-        virtual void UpdateProgressDialog(int value) {};
         /**
         * @copydoc OgitorsSystem::DisplayOpenDialog(Ogre::UTFString, Ogre::UTFStringVector&)
         */
@@ -372,10 +327,6 @@ namespace Ogitors
         * @copydoc OgitorsSystem::DisplayImportHeightMapDialog(Ogre::NameValuePairList)
         */
         virtual bool         DisplayImportHeightMapDialog(Ogre::NameValuePairList &params) {return false;};
-        /**
-        * @copydoc OgitorsSystem::DisplayEuclidDialog(Ogre::NameValuePairList)
-        */
-        virtual bool         DisplayEuclidDialog(Ogre::NameValuePairList &params) {return false;};
         /**
         * @copydoc OgitorsSystem::DisplayCalculateBlendMapDialog(Ogre::NameValuePairList)
         */

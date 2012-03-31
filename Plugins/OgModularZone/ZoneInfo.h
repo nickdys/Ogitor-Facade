@@ -61,15 +61,4 @@ namespace MZP
 
 	typedef std::map<int,ZoneInfo> ZoneInfoMap;
 
-	typedef std::pair<Ogre::Vector3,Ogre::Quaternion> HoleSnapPoint;
-
-	struct ZoneDesignTools
-	{
-		std::vector<HoleSnapPoint> mHoles;
-		std::vector<Ogre::Vector3> mPerimeter;
-	};
-
-
-
-
 }

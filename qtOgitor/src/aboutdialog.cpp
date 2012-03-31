@@ -8,7 +8,7 @@
 ///                              File
 ///
 /// Copyright (c) 2008-2011 Ismail TARIM <ismail@royalspor.com> and the Ogitor Team
-///
+//
 /// The MIT License
 ///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,12 +29,8 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////*/
-
 #include "aboutdialog.hxx"
-#include "OgitorsPrerequisites.h"
-#include <QtCore/QSettings>
 
-//------------------------------------------------------------------------------
 aboutdialog::aboutdialog(QWidget *parent, const QString version_string, Qt::WFlags flags) :
     QDialog(parent, flags)
 {
@@ -42,36 +38,12 @@ aboutdialog::aboutdialog(QWidget *parent, const QString version_string, Qt::WFla
     if (!version_string.isEmpty())
         setWindowTitle("About Ogitor " + version_string);
 
-    QSettings settings;
-    QString style = settings.value("preferences/customStyleSheet").toString();
-
-    QString psheet = "";
-    if(style == ":/stylesheets/dark.qss") {
-        psheet = QString::fromLatin1("a { color: white;}");
-    } else {
-        psheet = QString::fromLatin1("a { color: black;}");
-    }
-    projectBrowser->document()->setDefaultStyleSheet(psheet);
     projectBrowser->setSource(QUrl("qrc:/about/project.html"));
-    QString text = projectBrowser->toHtml();
-    // Replace version placeholder with actual current version number
-    text.replace("%OGITOR_VERSION%", Ogitors::OGITOR_VERSION);
-    projectBrowser->setHtml(text);
-    
     peopleBrowser->setSource(QUrl("qrc:/about/people.html"));
-
-    QString sheet = "";
-    if(style == ":/stylesheets/dark.qss") {
-        sheet = QString::fromLatin1("tt{ color: %1; font-size: 60%;}").arg(QString("rgb(220,220,220)"));
-    } else {
-        sheet = QString::fromLatin1("tt{ color: %1; font-size: 60%;}").arg(QString("green"));
-    }
-    licenseBrowser->document()->setDefaultStyleSheet(sheet);
-
     licenseBrowser->setSource(QUrl("qrc:/about/license.html"));
 }
-//------------------------------------------------------------------------------
+
 aboutdialog::~aboutdialog()
 {
 }
-//------------------------------------------------------------------------------
+

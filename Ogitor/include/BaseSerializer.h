@@ -122,10 +122,9 @@ namespace Ogitors
         /**
         * Exports scene data
         * @param SaveAs flag signifying that a "Save As" dialog is invoked to save scene file into different place
-        * @param exportfile optional parameter to pass the location where the scene is to be saved to
         * @return @see SCENEFILERESULT
         */
-        virtual int  Export(bool SaveAs = false, Ogre::String exportfile = "") {return SCF_OK;};
+        virtual int  Export(bool SaveAs = false) {return false;};
         /**
         * Imports scene data
         * @param importfile file name of imported scene

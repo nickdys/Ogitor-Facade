@@ -47,8 +47,6 @@
 #include <QtGui/QX11Info>
 #endif
 
-//-----------------------------------------------------------------------------------------
-
 class OverlayWidget : public QWidget
 {
     Q_OBJECT;
@@ -76,8 +74,6 @@ protected:
 
     void paintEvent(QPaintEvent* evt);
 };
-
-//-----------------------------------------------------------------------------------------
 
 class OgreWidget : public QWidget, public Ogre::FrameListener, public Ogre::RenderSystem::Listener, public Ogre::MeshSerializerListener
 {
@@ -116,20 +112,14 @@ public:
         mOverlayWidget->setMessageString(msg);
         update();
     };
-
     void setDoLoadFile(bool doLoad = true);
     bool isSizing()
     {
         return mScreenResize;
     }
-
-    bool isSwitchingScene() {return mSwitchingScene;};
-    void setSwitchingScene(bool switching) {mSwitchingScene = switching;};
+    void setSwitchingScene(bool switching) { mSwitchingScene = switching; };
     void processMaterialName(Ogre::Mesh *mesh, Ogre::String *name);
     void processSkeletonName(Ogre::Mesh *mesh, Ogre::String *name){};
-    void stopRendering(bool stop) {mRenderStop = stop;};
-
-    OverlayWidget* getOverlayWidget() {return mOverlayWidget;};
 
 public Q_SLOTS:
     void timerLoop();
@@ -180,8 +170,4 @@ protected:
     void showObjectMenu();
 };
 
-//-----------------------------------------------------------------------------------------
-
 #endif // __OGREWIDGET_HXX__
-
-//-----------------------------------------------------------------------------------------

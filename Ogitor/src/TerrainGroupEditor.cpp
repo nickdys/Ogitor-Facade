@@ -33,14 +33,13 @@
 #include "OgitorsPrerequisites.h"
 #if OGRE_PLATFORM == OGRE_PLATFORM_APPLE
 #include "OgreTerrain.h"
+#include "OgreTerrainMaterialGeneratorA.h"
 #include "OgreTerrainGroup.h"
 #else
 #include "Terrain/OgreTerrain.h"
+#include "Terrain/OgreTerrainMaterialGeneratorA.h"
 #include "Terrain/OgreTerrainGroup.h"
 #endif
-
-#include "TerrainMaterialGeneratorB.h"
-#include "TerrainMaterialGeneratorC.h"
 
 #include "BaseEditor.h"
 #include "OgitorsRoot.h"
@@ -54,10 +53,9 @@
 #include "ViewportEditor.h"
 #include "MultiSelEditor.h"
 #include "tinyxml.h"
-#include "ofs.h"
 
-#include "PagedGeometry.h"
-#include "GrassLoader.h"
+#include "PAGEDGEOMETRY/PagedGeometry.h"
+#include "PAGEDGEOMETRY/GrassLoader.h"
 
 using namespace Forests;
 using namespace Ogitors;
@@ -66,7 +64,6 @@ PropertyOptionsVector CTerrainGroupEditorFactory::mMapSizeOptions;
 PropertyOptionsVector CTerrainGroupEditorFactory::mColourMapSizeOptions;
 PropertyOptionsVector CTerrainGroupEditorFactory::mMinBatchSizes;
 PropertyOptionsVector CTerrainGroupEditorFactory::mMaxBatchSizes;
-PropertyOptionsVector CTerrainGroupEditorFactory::mMaterialGeneratorTypes;
 
 Ogre::TerrainGroup *StaticGroupPtr = 0;
 
@@ -75,6 +72,81 @@ Ogre::Real OgitorTerrainGroupHeightFunction(Ogre::Real x, Ogre::Real z, void *us
 {
     return StaticGroupPtr->getHeightAtWorldPosition(x,0,z);
 }
+//-----------------------------------------------------------------------------------------
+class OgreTerrainGroupWorkaround: public Ogre::TerrainGroup
+{
+public:
+    void setWorldSize(Ogre::Real newWorldSize)
+    {
+        mTerrainWorldSize = newWorldSize;
+    }
+    //---------------------------------------------------------------------
+    void setMapSize(Ogre::uint16 newSize)
+    {
+        mTerrainSize = newSize;
+    }
+};
+//-----------------------------------------------------------------------------------------
+class MaterialGeneratorWithDecal: public Ogre::TerrainMaterialGeneratorA
+{
+public:
+    MaterialGeneratorWithDecal(CTerrainGroupEditor *editor, Ogre::Frustum *frustum) 
+    { 
+        assert(frustum != 0);
+        mFrustum = frustum;
+        mGroup = editor;
+    }
+
+    Ogre::MaterialPtr generate(const Ogre::Terrain* terrain)
+    {
+        Ogre::MaterialPtr ptrMat = Ogre::TerrainMaterialGenerator::generate(terrain);
+        if(!ptrMat.isNull())
+        {
+            Ogre::Technique *t = ptrMat->getTechnique(0);
+
+            Ogre::Pass* p = t->createPass();
+            p->setName("OgitorDecalPass");
+            p->setLightingEnabled(false);
+            p->setAmbient(0,0,0);
+            p->setSpecular(0,0,0,0);
+            p->setSelfIllumination(0.9,0.9,0.9);
+            p->setSceneBlending(Ogre::SBT_TRANSPARENT_COLOUR);
+            p->setDepthBias(2.5, 2.5);
+
+            // create decal texture unit state
+            Ogre::TextureUnitState* texState = p->createTextureUnitState("OgitorDecalTexture");
+            texState->setProjectiveTexturing(true, mFrustum);
+            texState->setTextureAddressingMode(Ogre::TextureUnitState::TAM_BORDER);
+            texState->setTextureBorderColour(Ogre::ColourValue(0,0,0,0));
+            texState->setTextureFiltering(Ogre::FO_POINT, Ogre::FO_LINEAR, Ogre::FO_NONE);
+
+            t = ptrMat->getTechnique(1);
+            p = t->createPass();
+            p->setName("OgitorDecalPass2");
+            p->setLightingEnabled(false);
+            p->setAmbient(0,0,0);
+            p->setSpecular(0,0,0,0);
+            p->setSelfIllumination(0.9,0.9,0.9);
+            p->setSceneBlending(Ogre::SBT_TRANSPARENT_COLOUR);
+            p->setDepthBias(2.5, 2.5);
+
+            // create decal texture unit state
+            texState = p->createTextureUnitState("OgitorDecalTexture");
+            texState->setProjectiveTexturing(true, mFrustum);
+            texState->setTextureAddressingMode(Ogre::TextureUnitState::TAM_BORDER);
+            texState->setTextureBorderColour(Ogre::ColourValue(0,0,0,0));
+            texState->setTextureFiltering(Ogre::FO_POINT, Ogre::FO_LINEAR, Ogre::FO_NONE);
+
+            OgitorsRoot::getSingletonPtr()->OnTerrainMaterialChange(mGroup);
+        }
+
+        return ptrMat;
+    }
+
+private:
+    Ogre::Frustum       *mFrustum;
+    CTerrainGroupEditor *mGroup;
+};
 //-----------------------------------------------------------------------------------------
 CTerrainGroupEditor::CTerrainGroupEditor(CBaseEditorFactory *factory) : CBaseEditor(factory),
 mHandle(0), mBrushData(0), mModificationRect(0,0,0,0)
@@ -91,19 +163,17 @@ mHandle(0), mBrushData(0), mModificationRect(0,0,0,0)
     mTextureGrass = "grass";
     mBrushName = "AllWhite.png";
 
-    mMaxLayersAllowed = 6;
-
     Ogre::ResourceGroupManager *mngr = Ogre::ResourceGroupManager::getSingletonPtr();
-    Ogre::String value = mOgitorsRoot->GetProjectFile()->getFileSystemName() + "::/" + mOgitorsRoot->GetProjectOptions()->TerrainDirectory + "/";
-    mngr->addResourceLocation(value,"Ofs","TerrainResources");
+    Ogre::String value = mOgitorsRoot->GetProjectOptions()->ProjectDir + mOgitorsRoot->GetProjectOptions()->TerrainDirectory;
+    mngr->addResourceLocation(value,"FileSystem","TerrainResources");
 
     mTerrainGlobalOptions = OGRE_NEW Ogre::TerrainGlobalOptions();
 }
 //-----------------------------------------------------------------------------------------
 CTerrainGroupEditor::~CTerrainGroupEditor()
 {
+    Ogre::ResourceGroupManager::getSingletonPtr()->destroyResourceGroup("TerrainResources");
     OGRE_DELETE mTerrainGlobalOptions;
-    mOgitorsRoot->DestroyResourceGroup("TerrainResources");
 }
 //-----------------------------------------------------------------------------------------
 PGHeightFunction *CTerrainGroupEditor::getHeightFunction()
@@ -116,7 +186,7 @@ Ogre::Real CTerrainGroupEditor::getHeightAt(Ogre::Real x, Ogre::Real z)
     return mHandle->getHeightAtWorldPosition(x,0,z);
 }
 //-----------------------------------------------------------------------------------------
-Ogre::AxisAlignedBox CTerrainGroupEditor::getAABB()
+Ogre::AxisAlignedBox CTerrainGroupEditor::getAABB() 
 {
     return Ogre::AxisAlignedBox::BOX_NULL;
 }
@@ -131,23 +201,19 @@ void CTerrainGroupEditor::prepareBeforePresentProperties()
     definition->setAccess(true, mChildren.size() == 0);
     definition = const_cast<OgitorsPropertyDef *>(mProperties.getProperty("pg::densitymapsize")->getDefinition());
     definition->setAccess(true, mChildren.size() == 0);
-    definition = const_cast<OgitorsPropertyDef *>(mProperties.getProperty("materialgeneratortype")->getDefinition());
-    definition->setAccess(true, mChildren.size() == 0);
 }
 //-----------------------------------------------------------------------------------------
-bool CTerrainGroupEditor::getObjectContextMenu(UTFStringVector &menuitems)
+bool CTerrainGroupEditor::getObjectContextMenu(UTFStringVector &menuitems) 
 {
     menuitems.clear();
     menuitems.push_back(OTR("Add Page") + ";:/icons/additional.svg");
-    menuitems.push_back(OTR("Scale/Offset Height Values"));
     menuitems.push_back(OTR("Import Terrain From Heightmap"));
     menuitems.push_back(OTR("Export Heightmaps"));
-    menuitems.push_back(OTR("Export Compositemaps"));
 
     return true;
 }
 //-------------------------------------------------------------------------------
-void CTerrainGroupEditor::onObjectContextMenu(int menuresult)
+void CTerrainGroupEditor::onObjectContextMenu(int menuresult) 
 {
     if(menuresult == 0)
     {
@@ -173,7 +239,7 @@ void CTerrainGroupEditor::onObjectContextMenu(int menuresult)
         bool *mtx = OGRE_ALLOC_T(bool, width * height, Ogre::MEMCATEGORY_GEOMETRY);
         for(int i = 0; i < width * height;++i)
             mtx[i] = true;
-
+        
         for(it = mChildren.begin(); it != mChildren.end();it++)
         {
              CTerrainPageEditor *terrain = static_cast<CTerrainPageEditor*>(it->second);
@@ -182,7 +248,7 @@ void CTerrainGroupEditor::onObjectContextMenu(int menuresult)
 
              mtx[((PY - minY) * width) + (PX - minX)] = false;
         }
-
+     
         for(int Y = 0;Y < height;++Y)
         {
             for(int X = 0;X < width;++X)
@@ -201,7 +267,7 @@ void CTerrainGroupEditor::onObjectContextMenu(int menuresult)
         {
             int x = Ogre::StringConverter::parseInt(params["pagex"]);
             int y = Ogre::StringConverter::parseInt(params["pagey"]);
-
+        
             OgitorsPropertyValueMap creationparams;
             OgitorsPropertyValue pvalue;
 
@@ -214,7 +280,7 @@ void CTerrainGroupEditor::onObjectContextMenu(int menuresult)
             pvalue.propType = PROP_STRING;
             pvalue.val = Ogre::Any(pagename);
             creationparams["name"] = pvalue;
-
+            
             Ogre::Vector3 position;
             mHandle->convertTerrainSlotToWorldPosition(x, y, &position);
 
@@ -242,36 +308,16 @@ void CTerrainGroupEditor::onObjectContextMenu(int menuresult)
     }
     else if(menuresult == 1)
     {
-        Ogre::NameValuePairList params;
-
-        params["title"] = "Scale/Offset values";
-        params["input1"] = "Scale";
-        params["input2"] = "Offset";
-
-        if(!mSystem->DisplayImportHeightMapDialog(params))
-            return;
-
-        Ogre::Real fScale = Ogre::StringConverter::parseReal(params["input1"]);
-        Ogre::Real fOffset = Ogre::StringConverter::parseReal(params["input2"]);
-
-        _modifyHeights(fScale, fOffset);
+        importFullTerrainFromHeightMap();
     }
     else if(menuresult == 2)
     {
-        importFullTerrainFromHeightMap();
-    }
-    else if(menuresult == 3)
-    {
         exportHeightMaps();
-    }
-    else if(menuresult == 4)
-    {
-        exportCompositeMaps();
     }
 }
 //-----------------------------------------------------------------------------------------
 Ogre::Vector3 CTerrainGroupEditor::getPagePosition(int x, int y)
-{
+{ 
     Ogre::Vector3 pos;
     mHandle->convertTerrainSlotToWorldPosition(x, y, &pos);
     return pos;
@@ -287,7 +333,7 @@ bool CTerrainGroupEditor::isSelected()
 {
     CBaseEditor *selectedobject = mOgitorsRoot->GetSelection()->getAsSingle();
     bool selected = (selectedobject == this);
-
+    
     Ogitors::NameObjectPairList::iterator it;
 
     for(it = mChildren.begin(); it != mChildren.end();it++)
@@ -331,55 +377,33 @@ bool CTerrainGroupEditor::load(bool async)
     mDecalFrustum->setOrthoWindow(10, 10);
     mDecalFrustum->setVisible(false);
     mDecalTexture = Ogre::TextureManager::getSingletonPtr()->createManual("OgitorDecalTexture","TerrainResources",Ogre::TEX_TYPE_2D,256,256,1,1,Ogre::PF_A8R8G8B8,Ogre::TU_DYNAMIC_WRITE_ONLY,this);
-
+    
     mBrushData = OGRE_ALLOC_T(float, BRUSH_DATA_SIZE * BRUSH_DATA_SIZE, Ogre::MEMCATEGORY_GEOMETRY);
+
+    CSceneManagerEditor *mSceneMgr = static_cast<CSceneManagerEditor*>(mOgitorsRoot->GetSceneManagerEditor());
+
+    if(mSceneMgr->getShadowsEnabled())
+    {
+        Ogre::TerrainMaterialGeneratorA::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorA::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
+        matProfile->setReceiveDynamicShadowsEnabled(true);
+        matProfile->setReceiveDynamicShadowsLowLod(false);
+        matProfile->setReceiveDynamicShadowsDepth(true);
+        matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
+    }
+
+    CONNECT_PROPERTY_MEMFN(mSceneMgr, "shadows::enabled", CTerrainGroupEditor, OnShadowsChange, mShadowsConnection[0]);
+    CONNECT_PROPERTY_MEMFN(mSceneMgr, "shadows::technique", CTerrainGroupEditor, OnShadowsTechniqueChange, mShadowsConnection[1]);
 
     mTerrainGlobalOptions->setMaxPixelError(mMaxPixelError->get());
     mTerrainGlobalOptions->setCompositeMapSize(mCompositeMapTextureSize->get());
     mTerrainGlobalOptions->setCompositeMapDistance(mCompositeMapDistance->get());
     mTerrainGlobalOptions->setLightMapSize(mLightMapTextureSize->get());
     mTerrainGlobalOptions->setLayerBlendMapSize(mBlendMapTextureSize->get());
-    mTerrainGlobalOptions->setUseVertexCompressionWhenAvailable(false);
     mTerrainGlobalOptions->setSkirtSize(mSkirtSize->get());
     mTerrainGlobalOptions->setUseRayBoxDistanceCalculation(mUseRayBoxDistanceCalculation->get());
 
-    if(mMaterialGeneratorType->get() == 1)
-    {
-        Ogre::TerrainMaterialGeneratorPtr matGenPtr(OGRE_NEW Ogre::TerrainMaterialGeneratorC(this, mDecalFrustum));
-        mTerrainGlobalOptions->setDefaultMaterialGenerator(matGenPtr);
-        mMaxLayersAllowed = 10;
-    }
-    else
-    {
-        Ogre::TerrainMaterialGeneratorPtr matGenPtr(OGRE_NEW Ogre::TerrainMaterialGeneratorB(this, mDecalFrustum));
-        mTerrainGlobalOptions->setDefaultMaterialGenerator(matGenPtr);
-        mMaxLayersAllowed = 6;
-    }
-
-    CSceneManagerEditor *mSceneMgr = static_cast<CSceneManagerEditor*>(mOgitorsRoot->GetSceneManagerEditor());
-
-    if(mSceneMgr->getShadowsEnabled())
-    {
-        if(mMaterialGeneratorType->get() == 1)
-        {
-            Ogre::TerrainMaterialGeneratorC::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorC::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
-            matProfile->setReceiveDynamicShadowsEnabled(true);
-            matProfile->setReceiveDynamicShadowsLowLod(false);
-            matProfile->setReceiveDynamicShadowsDepth(true);
-            matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
-        }
-        else
-        {
-            Ogre::TerrainMaterialGeneratorB::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorB::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
-            matProfile->setReceiveDynamicShadowsEnabled(true);
-            matProfile->setReceiveDynamicShadowsLowLod(false);
-            matProfile->setReceiveDynamicShadowsDepth(true);
-            matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
-        }
-    }
-
-    CONNECT_PROPERTY_MEMFN(mSceneMgr, "shadows::enabled", CTerrainGroupEditor, OnShadowsChange, mShadowsConnection[0]);
-    CONNECT_PROPERTY_MEMFN(mSceneMgr, "shadows::technique", CTerrainGroupEditor, OnShadowsTechniqueChange, mShadowsConnection[1]);
+    Ogre::TerrainMaterialGeneratorPtr matGenPtr(OGRE_NEW MaterialGeneratorWithDecal(this, mDecalFrustum));
+    mTerrainGlobalOptions->setDefaultMaterialGenerator(matGenPtr);
 
     mHandle = OGRE_NEW Ogre::TerrainGroup(mOgitorsRoot->GetSceneManager() ,Ogre::Terrain::ALIGN_X_Z, mMapSize->get(), mWorldSize->get());
     mHandle->setOrigin(Ogre::Vector3::ZERO);
@@ -395,7 +419,7 @@ bool CTerrainGroupEditor::load(bool async)
     mGrassLoaderHandle->setVisibilityFlags(1 << mLayer->get());
 
     //Assign the "grassLoader" to be used to load geometry for the PagedGrass instance
-    mPGHandle->setPageLoader(mGrassLoaderHandle);
+    mPGHandle->setPageLoader(mGrassLoaderHandle);    
 
     //Supply a height function to GrassLoader so it can calculate grass Y values
     mGrassLoaderHandle->setHeightFunction(OgitorTerrainGroupHeightFunction);
@@ -442,7 +466,7 @@ bool CTerrainGroupEditor::unLoad()
     mDecalTexture->unload();
     mDecalTexture.setNull();
     if(mBrushData)
-    {
+    { 
         OGRE_FREE(mBrushData, Ogre::MEMCATEGORY_GEOMETRY);
         mBrushData = 0;
     }
@@ -472,7 +496,6 @@ void CTerrainGroupEditor::createProperties(OgitorsPropertyValueMap &params)
     PROPERTY_PTR(mWorldSize, "pageworldsize",Ogre::Real, 512.0f,0, SETTER(Ogre::Real, CTerrainGroupEditor, _setWorldSize));
     PROPERTY_PTR(mMapSize, "pagemapsize",int, 129, 0, SETTER(int, CTerrainGroupEditor, _setMapSize));
     PROPERTY_PTR(mPageNamePrefix, "pagenameprefix",Ogre::String, "Page", 0, SETTER(Ogre::String, CTerrainGroupEditor, _setPageNamePrefix));
-    PROPERTY_PTR(mMaterialGeneratorType, "materialgeneratortype",int, 0, 0, SETTER(int, CTerrainGroupEditor, _setMaterialGeneratorType));
     PROPERTY_PTR(mLightMapTextureSize, "lightmap::texturesize",int, 1024, 0, SETTER(int, CTerrainGroupEditor, _setLightMapTextureSize));
     PROPERTY_PTR(mBlendMapTextureSize, "blendmap::texturesize",int, 1024, 0, SETTER(int, CTerrainGroupEditor, _setBlendMapTextureSize));
     PROPERTY_PTR(mCompositeMapTextureSize, "tuning::compositemaptexturesize",int, 1024, 0, SETTER(int, CTerrainGroupEditor, _setCompositeMapTextureSize));
@@ -493,8 +516,16 @@ void CTerrainGroupEditor::createProperties(OgitorsPropertyValueMap &params)
 //-----------------------------------------------------------------------------------------
 bool CTerrainGroupEditor::_setMapSize(OgitorsPropertyBase* property, const int& value)
 {
-    mHandle->setTerrainSize(value);
+    Ogitors::NameObjectPairList::iterator it;
 
+    static_cast<OgreTerrainGroupWorkaround*>(mHandle)->setMapSize(value);
+    
+    for(it = mChildren.begin(); it != mChildren.end();it++)
+    {
+        CTerrainPageEditor *child = static_cast<CTerrainPageEditor*>(it->second);
+        child->setMapSize(value);
+    }
+    
     return true;
 }
 //-----------------------------------------------------------------------------------------
@@ -503,16 +534,14 @@ bool CTerrainGroupEditor::_setWorldSize(OgitorsPropertyBase* property, const Ogr
     if(value < 0.0f)
         return false;
 
-    mHandle->setTerrainWorldSize(value);
-
     Ogitors::NameObjectPairList::iterator it;
+
+    static_cast<OgreTerrainGroupWorkaround*>(mHandle)->setWorldSize(value);
 
     for(it = mChildren.begin(); it != mChildren.end();it++)
     {
         CTerrainPageEditor *child = static_cast<CTerrainPageEditor*>(it->second);
-        Ogre::Vector3 newpos;
-        mHandle->convertTerrainSlotToWorldPosition(child->mPageX->get(), child->mPageY->get(), &newpos);
-        child->mPosition->set(newpos);
+        child->setWorldSize(value);
     }
 
     if(mOgitorsRoot->GetPagingEditorObject())
@@ -520,46 +549,6 @@ bool CTerrainGroupEditor::_setWorldSize(OgitorsPropertyBase* property, const Ogr
         static_cast<OgitorsProperty<Ogre::Real>*>(mOgitorsRoot->GetPagingEditorObject()->getProperties()->getProperty("terrainCellSize"))->set(value);
         static_cast<OgitorsProperty<Ogre::Real>*>(mOgitorsRoot->GetPagingEditorObject()->getProperties()->getProperty("terrainLoadRadius"))->set(value * 0.45f);
         static_cast<OgitorsProperty<Ogre::Real>*>(mOgitorsRoot->GetPagingEditorObject()->getProperties()->getProperty("terrainHoldRadius"))->set(value * 0.90f);
-    }
-
-    return true;
-}
-//-----------------------------------------------------------------------------------------
-bool CTerrainGroupEditor::_setMaterialGeneratorType(OgitorsPropertyBase* property, const int& value)
-{
-    if(value == 1)
-    {
-        Ogre::TerrainMaterialGeneratorPtr matGenPtr(OGRE_NEW Ogre::TerrainMaterialGeneratorC(this, mDecalFrustum));
-        mTerrainGlobalOptions->setDefaultMaterialGenerator(matGenPtr);
-        mMaxLayersAllowed = 10;
-    }
-    else
-    {
-        Ogre::TerrainMaterialGeneratorPtr matGenPtr(OGRE_NEW Ogre::TerrainMaterialGeneratorB(this, mDecalFrustum));
-        mTerrainGlobalOptions->setDefaultMaterialGenerator(matGenPtr);
-        mMaxLayersAllowed = 6;
-    }
-
-    CSceneManagerEditor *mSceneMgr = static_cast<CSceneManagerEditor*>(mOgitorsRoot->GetSceneManagerEditor());
-
-    if(mSceneMgr->getShadowsEnabled())
-    {
-        if(value == 1)
-        {
-            Ogre::TerrainMaterialGeneratorC::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorC::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
-            matProfile->setReceiveDynamicShadowsEnabled(true);
-            matProfile->setReceiveDynamicShadowsLowLod(false);
-            matProfile->setReceiveDynamicShadowsDepth(true);
-            matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
-        }
-        else
-        {
-            Ogre::TerrainMaterialGeneratorB::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorB::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
-            matProfile->setReceiveDynamicShadowsEnabled(true);
-            matProfile->setReceiveDynamicShadowsLowLod(false);
-            matProfile->setReceiveDynamicShadowsDepth(true);
-            matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
-        }
     }
 
     return true;
@@ -660,9 +649,9 @@ bool CTerrainGroupEditor::_setCompositeMapDistance(OgitorsPropertyBase* property
         return false;
 
     mTerrainGlobalOptions->setCompositeMapDistance(value);
-
+    
     Ogre::TerrainGroup::TerrainIterator it = mHandle->getTerrainIterator();
-
+    
     Ogre::Rect drect(0, 0, mMapSize->get(), mMapSize->get());
 
     while(it.hasMoreElements())
@@ -736,54 +725,32 @@ TiXmlElement* CTerrainGroupEditor::exportDotScene(TiXmlElement *pParent)
 void CTerrainGroupEditor::OnShadowsChange(const OgitorsPropertyBase* property, Ogre::Any value)
 {
     bool newstate = Ogre::any_cast<bool>(value);
-
+    
     CSceneManagerEditor *mSceneMgr = static_cast<CSceneManagerEditor*>(mOgitorsRoot->GetSceneManagerEditor());
 
     if(mSceneMgr->getShadowsTechnique() >= Ogre::SHADOWTYPE_TEXTURE_ADDITIVE && mSceneMgr->getShadowsTechnique() <= Ogre::SHADOWTYPE_TEXTURE_MODULATIVE_INTEGRATED)
     {
-        if(mMaterialGeneratorType->get() == 1)
-        {
-            Ogre::TerrainMaterialGeneratorC::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorC::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
-            matProfile->setReceiveDynamicShadowsEnabled(newstate);
-            matProfile->setReceiveDynamicShadowsLowLod(false);
-            matProfile->setReceiveDynamicShadowsDepth(newstate);
-            matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
-        }
-        else
-        {
-            Ogre::TerrainMaterialGeneratorB::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorB::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
-            matProfile->setReceiveDynamicShadowsEnabled(newstate);
-            matProfile->setReceiveDynamicShadowsLowLod(false);
-            matProfile->setReceiveDynamicShadowsDepth(newstate);
-            matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
-        }
+        Ogre::TerrainMaterialGeneratorA::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorA::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
+        matProfile->setReceiveDynamicShadowsEnabled(newstate);
+        matProfile->setReceiveDynamicShadowsLowLod(false);
+        matProfile->setReceiveDynamicShadowsDepth(newstate);
+        matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
     }
 }
 //-----------------------------------------------------------------------------------------
 void CTerrainGroupEditor::OnShadowsTechniqueChange(const OgitorsPropertyBase* property, Ogre::Any value)
 {
-
+    
     CSceneManagerEditor *mSceneMgr = static_cast<CSceneManagerEditor*>(mOgitorsRoot->GetSceneManagerEditor());
     bool newstate = mSceneMgr->getShadowsEnabled();
 
     if(mSceneMgr->getShadowsTechnique() >= Ogre::SHADOWTYPE_TEXTURE_ADDITIVE && mSceneMgr->getShadowsTechnique() <= Ogre::SHADOWTYPE_TEXTURE_MODULATIVE_INTEGRATED)
     {
-        if(mMaterialGeneratorType->get() == 1)
-        {
-            Ogre::TerrainMaterialGeneratorC::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorC::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
-            matProfile->setReceiveDynamicShadowsEnabled(newstate);
-            matProfile->setReceiveDynamicShadowsLowLod(false);
-            matProfile->setReceiveDynamicShadowsDepth(newstate);
-            matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
-        }
-        else
-        {
-            Ogre::TerrainMaterialGeneratorB::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorB::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
-            matProfile->setReceiveDynamicShadowsEnabled(newstate);
-            matProfile->setReceiveDynamicShadowsLowLod(false);
-            matProfile->setReceiveDynamicShadowsDepth(newstate);
-            matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
-        }
+        Ogre::TerrainMaterialGeneratorA::SM2Profile* matProfile = static_cast<Ogre::TerrainMaterialGeneratorA::SM2Profile*>(mTerrainGlobalOptions->getDefaultMaterialGenerator()->getActiveProfile());
+        matProfile->setReceiveDynamicShadowsEnabled(newstate);
+        matProfile->setReceiveDynamicShadowsLowLod(false);
+        matProfile->setReceiveDynamicShadowsDepth(newstate);
+        matProfile->setReceiveDynamicShadowsPSSM(static_cast<Ogre::PSSMShadowCameraSetup*>(mSceneMgr->getPSSMSetup().get()));
     }
 }
 //-----------------------------------------------------------------------------------------
@@ -821,16 +788,10 @@ CTerrainGroupEditorFactory::CTerrainGroupEditorFactory(OgitorsView *view) : CBas
     mColourMapSizeOptions.push_back(PropertyOption("1024x1024", Ogre::Any((int)1024)));
     mColourMapSizeOptions.push_back(PropertyOption("2048x2048", Ogre::Any((int)2048)));
 
-    mMaterialGeneratorTypes.clear();
-    mMaterialGeneratorTypes.push_back(PropertyOption("Default", Ogre::Any((int)0)));
-    mMaterialGeneratorTypes.push_back(PropertyOption("Ogitor10", Ogre::Any((int)1)));
-
     AddPropertyDefinition("pageworldsize","World Size", "The size of page in world coordinates.",PROP_REAL);
     OgitorsPropertyDef *definition = AddPropertyDefinition("pagemapsize","Map Size", "The size of page in vertices per side.",PROP_INT);
     definition->setOptions(&mMapSizeOptions);
     AddPropertyDefinition("pagenameprefix","Page Name Prefix", "The Prefix to be added to page names.",PROP_STRING);
-    definition = AddPropertyDefinition("materialgeneratortype","Mat. Generator", "The material generator to be used.",PROP_INT);
-    definition->setOptions(&mMaterialGeneratorTypes);
     definition = AddPropertyDefinition("lightmap::texturesize","Light Map::Texture Size", "The size of lightmap texture.",PROP_INT);
     definition->setOptions(&mColourMapSizeOptions);
     definition = AddPropertyDefinition("blendmap::texturesize","Blend Map::Texture Size", "The size of blendmap texture.",PROP_INT);
@@ -874,8 +835,9 @@ CBaseEditor *CTerrainGroupEditorFactory::CreateObject(CBaseEditor **parent, Ogit
 
     if ((ni = params.find("init")) != params.end())
     {
-        Ogre::String value = "/" + OgitorsRoot::getSingletonPtr()->GetProjectOptions()->TerrainDirectory;
-        OgitorsRoot::getSingletonPtr()->GetProjectFile()->createDirectory(value.c_str());
+        Ogre::String value = OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectDir + OgitorsRoot::getSingletonPtr()->GetProjectOptions()->TerrainDirectory + "/";
+        Ogre::String dirname = OgitorsUtils::QualifyPath(value);    
+        OgitorsSystem::getSingletonPtr()->MakeDirectory(dirname);
         params.erase(ni);
     }
 

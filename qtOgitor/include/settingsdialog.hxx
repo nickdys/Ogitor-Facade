@@ -29,7 +29,6 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////*/
-
 #ifndef SETTINGSDIALOG_HXX
 #define SETTINGSDIALOG_HXX
 
@@ -40,16 +39,19 @@
 #include "ui_settingsdialog.h"
 #include "colourpicker.hxx"
 
-//----------------------------------------------------------------------------------
-
-class SettingsDialog : public QDialog, public Ui::settingsdialog 
-{
+class SettingsDialog : public QDialog, public Ui::settingsdialog {
     Q_OBJECT
-
 public:
     SettingsDialog(QWidget *parent, Ogitors::PROJECTOPTIONS *options);
     virtual ~SettingsDialog();
     void addResourceLocation(int loctype, QString path);
+public Q_SLOTS:
+    void onAccept();
+    void browse();
+    void onAddDirectory();
+    void onAddDirectoryRecursive();
+    void onAddArchive();
+    void onRemoveEntry();
 
 private:
     Ogitors::PROJECTOPTIONS *mOptions;
@@ -60,22 +62,12 @@ private:
     ColourPickerWidget      *mSelectHighlightColourWidget;
     ColourPickerWidget      *mGridColourWidget;
 
-    bool eventFilter(QObject* watched, QEvent* e);
+    bool eventFilter ( QObject * watched, QEvent * e );
 
-private Q_SLOTS:
-    void onAccept();
-    void browse();
-    void onAddDirectory();
-    void onRemoveEntry();
-    void setDirty();
-    void autoBackupStateChanged(int state);
-    void onAutoBackupValueChanged();
-    void onSelectPathForBackup();
+    // Drag-and drop functions
+    void dragEnterEvent(QDragEnterEvent * e);
+    void dropEvent(QDropEvent * e);
+    static QStringList getFilenames(const QMimeData * data);
 };
 
-//----------------------------------------------------------------------------------
-
 #endif // SETTINGSDIALOG_HXX
-
-//----------------------------------------------------------------------------------
-

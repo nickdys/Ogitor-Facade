@@ -778,8 +778,6 @@ bool CViewportEditor::unLoad()
 
         mViewCamera->destroy();
         mViewCamera = 0;
-
-        Ogre::CompositorManager::getSingletonPtr()->removeCompositorChain(mHandle);
     
         mOgitorsRoot->GetRenderWindow()->removeViewport(mHandle->getZOrder());
         mHandle = 0;

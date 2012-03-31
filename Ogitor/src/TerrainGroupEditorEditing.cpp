@@ -119,7 +119,7 @@ void CTerrainGroupEditor::setMousePosition(Ogre::Ray camRay)
         }
 
         mDecalNode->setPosition(pos);
-        mDecalFrustum->setVisible(mEditMode != EM_NONE);
+        mDecalFrustum->setVisible(true);
 
         float value = (float)mBrushSize * modulus;
 
@@ -148,11 +148,7 @@ void CTerrainGroupEditor::setEditMode(unsigned int mode)
     mModificationRect = Ogre::Rect(0,0,0,0);
 
     mEditMode = (EditMode)mode;
-
     mDecalFrustum->setVisible(mEditMode != EM_NONE);
-
-    if(mEditMode == EM_NONE)
-        mDecalNode->setPosition(Ogre::Vector3(999999,-999999,999999));
 }
 //-----------------------------------------------------------------------------------------
 void CTerrainGroupEditor::setColour(const Ogre::ColourValue& colour)
@@ -358,23 +354,5 @@ void CTerrainGroupEditor::recalculateLighting()
     mHandle->update();
 
     mOgitorsRoot->SetSceneModified(true);
-}
-//-----------------------------------------------------------------------------------------
-void CTerrainGroupEditor::_modifyHeights(float scale, float offset)
-{
-    NameObjectPairList::iterator it = mChildren.begin();
-
-    OgitorsUndoManager::getSingletonPtr()->BeginCollection("Modify All Height Values");
-
-    while(it != mChildren.end())
-    {
-        CTerrainPageEditor *ed = static_cast<CTerrainPageEditor*>(it->second);
-        ed->_modifyHeights(scale, offset);
-        it++;
-    }
-
-    mOgitorsRoot->SetSceneModified(true);
-
-    OgitorsUndoManager::getSingletonPtr()->EndCollection(true);
 }
 //-----------------------------------------------------------------------------------------

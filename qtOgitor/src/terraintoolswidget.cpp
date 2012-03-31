@@ -132,7 +132,7 @@ TerrainToolsWidget::TerrainToolsWidget(QWidget *parent) :
 
     setLayout(mLayout);
 
-    EventManager::getSingletonPtr()->connectEvent(EventManager::LOAD_STATE_CHANGE, this, true, 0, true, 0, EVENT_CALLBACK(TerrainToolsWidget, onSceneLoadStateChange));
+    EventManager::Instance()->connectEvent("load_state_change", this, true, 0, true, 0, EVENT_CALLBACK(TerrainToolsWidget, onSceneLoadStateChange));
 
     connect(texturesWidget, SIGNAL(  itemSelectionChanged() ), this, SLOT( textureIndexChanged()));
     connect(plantsWidget, SIGNAL( itemSelectionChanged() ), this, SLOT( plantIndexChanged()));
@@ -144,7 +144,7 @@ TerrainToolsWidget::TerrainToolsWidget(QWidget *parent) :
 //----------------------------------------------------------------------------------------
 TerrainToolsWidget::~TerrainToolsWidget()
 {
-    EventManager::getSingletonPtr()->disconnectEvent(EventManager::LOAD_STATE_CHANGE, this);
+    EventManager::Instance()->disconnectEvent("load_state_change", this);
 }
 //----------------------------------------------------------------------------------------
 void TerrainToolsWidget::resizeEvent(QResizeEvent* evt)

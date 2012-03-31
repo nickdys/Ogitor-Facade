@@ -5,17 +5,14 @@ OGITOR Team
 ---------
 Ismail TARIM		(stealth977)
 Mirko GEISSLER		(xadhoom)
-Jacob MOEN		(jacmoe)
-Philip ALLGAIER		(spacegaier)
+Jacob MOEN			(jacmoe)
 Enrico ZSCHEMISCH	(Enrico)
-Matthew PERKINS		(Squirell)
-Stefan STAMMBERGER	(SomeFusion)(fusion44)
-Jeroen DIERCKX		(JeDi)
-Daniel PROTOPOPOV	(Acolyte)(hellrizer)
-Sven-Hendrik HAASE	(svenstaro)
-Chris CALEF		(bad_otter)
-László MOLNÁR 		(SXtheOne)
-Michael ZÖLLER		(guru)
+Matthew Perkins		(Squirell)
+Stefan Stammberger.	(SomeFusion)(fusion44)
+Jeroen Dierckx		(JeDi)
+Daniel Protopopov	(Acolyte)(hellrizer)
+Sven-Hendrik Haase  (svenstaro)
+László MOLNÁR		(SXtheOne)
 
 
 Feature Contributors
@@ -24,25 +21,26 @@ The following list includes developers who have contributed features to OGITOR:
 
 Contributor                             Subject Areas 
 -----------                             --------------------------------------
-Dermont Gill	(dermont)		Invaluable input and help, especially intial CMake support and Linux fixes.
-Gary McLean     (Shockeye)              Modular Zone Plugin
+Dermont Gill	(dermont)				Invaluable input and help, especially intial CMake support and Linux fixes.
 
 Tranlators
 ------
-Alex ZINCHENKO		(zintus)				Russian (ru)
-Daniel PROTOPOPOV	(Acolyte)(hellrizer)			Russian (ru)
-s0lidnuts		(s0lidnuts)				Brazilian Portuguese (pt_BR)
-Shadow007		(Shadow007)				French (fr)
-Ismail TARIM		(stealth977)				Turkish (tr)
+Alex Zinchenko		(zintus)				Russian (ru)
+Daniel Protopopov	(Acolyte)(hellrizer)	Russian (ru)
+s0lidnuts			(s0lidnuts)				Brazilian Portuguese (pt_BR)
+Shadow007			(Shadow007)				French (fr)
+Ismail TARIM		(stealth977)			Turkish (tr)
 Mirko GEISSLER		(xadhoom)				German (de)
-Philip ALLGAIER		(spacegaier)				German (de)
-Jacob MOEN		(jacmoe)				Danish (da)
-Ruud v A		(Ruud v A)				Dutch (nl)
+Jacob MOEN			(jacmoe)				Danish (da)
+Ruud v A			(Ruud v A)				Dutch (nl)
 
 Others
 ------
 The following people have been notable in their support of OGITOR through the
 fixing of bugs, testing patches, and various other miscellaneous contributions:
+
+
+
 
 
 If we've forgotten you in the above list, please contact us!

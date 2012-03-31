@@ -16,9 +16,7 @@
 //Place - Suite 330, Boston, MA 02111-1307, USA, or go to
 //http://www.gnu.org/copyleft/lesser.txt.
 ////////////////////////////////////////////////////////////////////////////////*/
-
-#ifndef MODULAR_ZONE_PLUGIN_H
-#define MODULAR_ZONE_PLUGIN_H
+#pragma once
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
    #ifdef PLUGIN_EXPORT
@@ -30,10 +28,8 @@
    #define PluginExport
 #endif
 
+
+
 extern "C" bool PluginExport dllStartPlugin(void *identifier, Ogre::String& name);
 
-extern "C" bool PluginExport dllGetPluginName(Ogre::String& name);
-
 extern "C" bool PluginExport dllStopPlugin(void);
-
-#endif

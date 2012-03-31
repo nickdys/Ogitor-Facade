@@ -29,7 +29,7 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////*/
-#ifdef OGITOR_MESHMAGICK_INTERFACE
+#ifdef OGITOR_EXPERIMENTAL_INTERFACE
 
 #include <QtGui/QPainter>
 #include <QtCore/QEvent>
@@ -122,7 +122,7 @@ void MagickDisplayWidget::dropEvent(QDropEvent *evt)
         if(selected.size())
         {
             QString stxt = selected[0]->text() + ".mesh";
-            Ogre::MeshPtr pmesh = Ogre::MeshManager::getSingletonPtr()->load(stxt.toStdString(), PROJECT_RESOURCE_GROUP);
+            Ogre::MeshPtr pmesh = Ogre::MeshManager::getSingletonPtr()->load(stxt.toStdString(), "ProjectResources");
             static_cast<MagickWidget*>(parentWidget())->loadMesh(pmesh);
         }
     }

@@ -157,7 +157,7 @@ QWidget(parent), mLastObject(0), BLOCKSETFUNCTIONS(0)
     descLabel->setFixedHeight(48);
     descLabel->setWordWrap(true);
     descLabel->setMargin(4);
-    descLabel->setObjectName(QString::fromUtf8("descLabel"));
+    descLabel->setStyleSheet("background-color: #AFAFAF;");
     QVBoxLayout *boxlayout = new QVBoxLayout();
     boxlayout->setMargin(0);
     boxlayout->addWidget(propertiesWidget);

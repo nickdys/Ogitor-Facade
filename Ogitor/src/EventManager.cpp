@@ -36,7 +36,19 @@
 
 namespace Ogitors
 {
-    template<> EventManager* Singleton<EventManager>::ms_Singleton = 0;
+    EventManager* EventManager::ms_Singleton = 0;
+
+    EventManager::EventManager()
+    {
+        assert(ms_Singleton == 0);
+        ms_Singleton = this;
+    }
+
+    EventManager::~EventManager()
+    {
+        assert(ms_Singleton != 0);
+        ms_Singleton = 0;
+    }
 
     void EventManager::connectEvent(const event_id_type& id, void *listener, bool ignoreSender, void *sender, bool ignoreReceiver, void *receiver, EventCallBack handler_func)
     {
@@ -65,8 +77,6 @@ namespace Ogitors
         }
     }
 
-    //-----------------------------------------------------------------------------------------
-
     void EventManager::disconnectEvent(const event_id_type& id, void *listener)
     {
         event_handler_map::iterator it = mEventHandlers.find(id);
@@ -84,8 +94,6 @@ namespace Ogitors
         assert(false && "Listener does not exist!!!");
     }
 
-    //-----------------------------------------------------------------------------------------
-
     void EventManager::sendEvent(void *sender, void *receiver, IEvent* event)
     {
         event_handler_map::iterator it = mEventHandlers.find(event->getID());
@@ -101,5 +109,3 @@ namespace Ogitors
         }
     }
 }
-
-//-----------------------------------------------------------------------------------------

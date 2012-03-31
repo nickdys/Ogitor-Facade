@@ -240,27 +240,6 @@ namespace Ogitors
         */
         static Ogre::String GetUserDataSaveString(OgitorsCustomPropertySet *set, int indentation);
 
-        /**
-        * Saves given image to OFS
-        * @param image the image file to be saved
-        * @param filename the filename to be saved as
-        */
-        static bool SaveImageOfs(Ogre::Image& image, Ogre::String filename);
-
-        /**
-        * Saves given stream to OFS
-        * @param stream the stream to be saved
-        * @param filename the filename to be saved as
-        */
-        static bool SaveStreamOfs(std::stringstream& stream, Ogre::String filename);
-
-        /**
-        * Copies a file system directory contents into OFS file system
-        * @param dirpath path of the file system directory
-        * @param ofs_path path of the OFS directory to copy files into
-        */
-        static bool CopyDirOfs(Ogre::String dirpath, Ogre::String ofs_path);
-
     protected:
         static Ogre::String   mExePath;
         static unsigned int   mVertexBufferSize;

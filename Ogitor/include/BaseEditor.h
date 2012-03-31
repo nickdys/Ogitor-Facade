@@ -62,8 +62,8 @@
     assert(ptr != 0);\
 }\
 
-#define SETTER(type, classname, func) (Ogitors::PropertySetterFunction<type>::from_method<classname, &classname::func>(this))
-#define GETTER(type, classname, func) (Ogitors::PropertyGetterFunction<type>::from_method<classname, &classname::func>(this))
+#define SETTER(type, classname, func) &(Ogitors::PropertySetterFunction<type>::from_method<classname, &classname::func>(this))
+#define GETTER(type, classname, func) &(Ogitors::PropertyGetterFunction<type>::from_method<classname, &classname::func>(this))
 
 #define CONNECT_PROPERTY_MEMFN(object, propertyname, classname, function, connection)\
     object->getProperties()->getProperty(propertyname)->connect(Ogitors::OgitorsSignalFunction::from_method<classname, &classname::function>(this), connection);\

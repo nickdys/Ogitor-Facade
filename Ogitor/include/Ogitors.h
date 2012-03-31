@@ -44,7 +44,7 @@
 #include "BaseSerializer.h"
 #include "BaseEditor.h"
 #include "VisualHelper.h"
-#include "OFSSceneSerializer.h"
+#include "OgitorsSceneSerializer.h"
 #include "SceneManagerEditor.h"
 #include "ViewportEditor.h"
 #include "NodeEditor.h"

@@ -31,7 +31,6 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "DotSceneSerializer.h"
-#include "ofs.h"
 
 using namespace Ogitors;
 
@@ -180,7 +179,7 @@ int CDotSceneSerializer::Import(Ogre::String importfile)
     
     pOpt->SceneManagerName = "OctreeSceneManager";
 
-    pOpt->ResourceDirectories.push_back("/");
+    pOpt->ResourceDirectories.push_back("FS:./");
     TiXmlElement* resLoc = element->FirstChildElement("resourceLocations");
     if(resLoc)
     {
@@ -191,12 +190,11 @@ int CDotSceneSerializer::Import(Ogre::String importfile)
             Ogre::String resName = ValidAttr(resLoc->Attribute("name"));
             if(resType == "FileSystem")
             {
-                OgitorsUtils::CleanPath(resName);
-                
-                if(resName[0] == '.')
-                    resName.erase(0, 1);
-
-                pOpt->ResourceDirectories.push_back(resName);
+                pOpt->ResourceDirectories.push_back("FS:" + resName);
+            }
+            else if(resType == "Zip")
+            {
+                pOpt->ResourceDirectories.push_back("ZP:" + resName);
             }
 
             resLoc = resLoc->NextSiblingElement();
@@ -214,22 +212,6 @@ int CDotSceneSerializer::Import(Ogre::String importfile)
     pOpt->CameraPositions[1] = Ogre::Vector3(0,10,0);
     pOpt->CameraOrientations[1] = Ogre::Quaternion::IDENTITY;
     pOpt->CameraSaveCount = 1;
-
-    OFS::OfsPtr& ofsFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-
-    Ogre::String ofs_file_name = OgitorsUtils::QualifyPath(filePath + "/" + pOpt->ProjectName + ".ofs");
-    
-    if(ofsFile.mount(ofs_file_name.c_str(), OFS::OFS_MOUNT_CREATE) != OFS::OFS_OK)
-        return SCF_ERRFILE;
-
-    OgitorsUtils::CopyDirOfs(filePath, "/");
-
-    ofsFile->deleteFile(fileName.c_str());
-
-    ofs_file_name = OgitorsUtils::ExtractFileName(ofs_file_name);
-
-    ofsFile->deleteFile(ofs_file_name.c_str());
-    
     ogRoot->PrepareProjectResources();
 
     OgitorsPropertyValueMap params;
@@ -353,38 +335,7 @@ int CDotSceneSerializer::RecurseReadObjects(TiXmlElement *parentelement,CBaseEdi
     {
         newobj = 0;
         eType = element->Value();
-        if(eType == "node") 
-        {
-            ReadSceneNode(element, parentobject, &newobj);
-            int ret = RecurseReadObjects(element, newobj);
-            
-            if(ret != SCF_OK) 
-                return ret;
-
-            NameObjectPairList& childlist = newobj->getChildren();
-            if(childlist.size() == 1)
-            {
-                CBaseEditor *childobj = childlist.begin()->second;
-                childobj->setParent(newobj->getParent());
-                OgitorsPropertyValueMap vmapn = newobj->getProperties()->getValueMap();
-                OgitorsPropertyValueMap vmapo;
-
-                OgitorsPropertyValueMap::iterator vit;
-
-                vit = vmapn.find("autotracktarget");
-                vmapo.insert(OgitorsPropertyValueMap::value_type(vit->first, vit->second));
-                vit = vmapn.find("position");
-                vmapo.insert(OgitorsPropertyValueMap::value_type(vit->first, vit->second));
-                vit = vmapn.find("scale");
-                vmapo.insert(OgitorsPropertyValueMap::value_type(vit->first, vit->second));
-                vit = vmapn.find("orientation");
-                vmapo.insert(OgitorsPropertyValueMap::value_type(vit->first, vit->second));
-
-                OgitorsRoot::getSingletonPtr()->DestroyEditorObject(newobj);
-                newobj = childobj;
-                childobj->getProperties()->setValueMap(vmapo);
-            }
-        }
+        if(eType == "node") ReadSceneNode(element, parentobject, &newobj);
         else if(eType == "entity") ReadEntity(element, parentobject, &newobj);
         else if(eType == "subentities") ReadSubEntity(element, parentobject, &newobj);
         else if(eType == "light") ReadLight(element, parentobject, &newobj);
@@ -393,6 +344,9 @@ int CDotSceneSerializer::RecurseReadObjects(TiXmlElement *parentelement,CBaseEdi
         else if(eType == "plane") ReadPlane(element, parentobject, &newobj);
         else 
             continue;
+        
+        int ret = RecurseReadObjects(element,newobj);
+        if(ret != SCF_OK) return ret;
     } while(element = element->NextSiblingElement());
     return SCF_OK;
 }
@@ -707,12 +661,6 @@ bool dllStartPlugin(void *identifier, Ogre::String& name)
     return true;
 }
 //----------------------------------------------------------------------------
-bool dllGetPluginName(Ogre::String& name)
-{
-    name = "Dot Scene Serializer Plugin";
-    return true;
-}
-//----------------------------------------------------------------------------
 bool dllStopPlugin(void)
 {
     OGRE_DELETE DotSceneSerializer;
@@ -720,3 +668,5 @@ bool dllStopPlugin(void)
     return true;
 }
 //----------------------------------------------------------------------------
+
+

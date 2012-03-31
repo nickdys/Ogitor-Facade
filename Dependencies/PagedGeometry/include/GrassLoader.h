@@ -140,6 +140,7 @@ public:
     to take effect.	*/
     inline void setRenderQueueGroup(Ogre::uint8 queueID) { renderQueue = queueID; }
 
+	Ogre::uint8 getRenderQueueGroup() { return renderQueue; };
     /** \brief Sets the height function used to calculate grass Y coordinates
     \param heightFunction A pointer to a height function
 

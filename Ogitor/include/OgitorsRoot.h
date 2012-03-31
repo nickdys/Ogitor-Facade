@@ -34,11 +34,6 @@
 
 #include "OgitorsSingleton.h"
 
-namespace OFS
-{
-    class OfsPtr;
-};
-
 namespace Ogitors
 {
     class Selection2D;
@@ -68,56 +63,7 @@ namespace Ogitors
         void         *mHandle;
     };
 
-    /*!  
-    A structure that is responsible for registering a widget ("preference editor")
-    that will later be used in the preferences dialog of Ogitor 
-    */
-    class PreferencesEditor;
-    struct PreferencesEditorData
-    {
-        Ogre::String        mCaption;
-        Ogre::String        mIcon;
-        Ogre::String        mSectionName;
-        PreferencesEditor  *mHandle;
-    };
-
-    /*!  
-    A class that is responsible for handling plugin values exposed to the preferences editor
-    */
-    class PreferencesEditor
-    {
-    public:
-        /**
-        * Fetches preferences list
-        * @param preferences place to fill preference values into
-        */
-        virtual void            getPreferences(Ogre::NameValuePairList& preferences) = 0;
-        /**
-        * Fetches a QWidget pointer to put preferences into (internal use only)
-        * @return A QWidget type pointer
-        * @see QWidget
-        */
-        virtual void            *getPreferencesWidget() = 0;
-        /**
-        * Applies preferences to the Ogitor
-        * @return true if preferences were applied successfully, otherwise false
-        */
-        virtual bool            applyPreferences() = 0;
-        /**
-        * Sets the preferences section name associated with the preferences editor
-        */
-        virtual void            setPrefsSectionName(Ogre::String prefsSectionName) {mPrefsSectionName = prefsSectionName;};
-        /**
-        * Returns the section name associated with that preferences editor
-        * @return preferences section name
-        */
-        virtual Ogre::String    getPrefsSectionName() {return mPrefsSectionName;};
-
-    protected:
-        Ogre::String mPrefsSectionName;
-    };
-
-    // A Hashed by Name Storage Definition for All Serializers
+    /// A Hashed by Name Storage Definition for All Serializers
     typedef OgitorExport HashMap<Ogre::String,CBaseSerializer*> SerializerMap;
 
     typedef HashMap<Ogre::String, OgitorsScriptInterpreter*> ScriptInterpreterMap;
@@ -128,20 +74,18 @@ namespace Ogitors
    
     typedef Ogre::vector<TabWidgetData>::type TabWidgetDataList;
 
-    typedef OgitorExport Ogre::vector<PreferencesEditorData>::type PreferencesEditorDataList;
-
     //! This is the Root Class in Charge of All Editors
     /*!  
 
     */
-    class OgitorExport OgitorsRoot : public Singleton<OgitorsRoot>, public Ogre::GeneralAllocatedObject
+    class OgitorExport OgitorsRoot: public Singleton<OgitorsRoot>, public Ogre::GeneralAllocatedObject
     {
         friend class CBaseEditor;
     public:
         /**
-        * Constructor, initializes with platform dependent system classes
+        * Constructor, initialises with platform dependant system classes
         */ 
-        OgitorsRoot(Ogre::StringVector* pDisabledPluginPaths);
+        OgitorsRoot();
         /**
         * Destructor
         */
@@ -401,11 +345,6 @@ namespace Ogitors
         */
         PROJECTOPTIONS *GetProjectOptions() {return &mProjectOptions;}
         /**
-        * Fetches project file system
-        * @return project file system
-        */
-        OFS::OfsPtr& GetProjectFile() {return *mProjectFile;}
-        /**
         * Loads a scene from specified file
         * @param Filename file name for the scene to be loaded
         * @return result of loading (or attempting) a scene
@@ -418,7 +357,7 @@ namespace Ogitors
         * @return true if scene was saved successfully, otherwise false 
         * @see SCENEFILERESULT for return results
         */
-        bool            SaveScene(bool SaveAs = false, Ogre::String exportfile = "");
+        bool            SaveScene(bool SaveAs = false);
         /**
         * Terminates current scene
         * @return true if scene was terminated (and saved after being modified) or not modified at all, otherwise false
@@ -654,104 +593,104 @@ namespace Ogitors
         * Fetches a list of names for objects that are of node type
         * @param list list to place object names
         */
-        void                                GetAutoTrackTargets(Ogre::StringVector &list);
+        void                            GetAutoTrackTargets(Ogre::StringVector &list);
         /**
         * Fetches terrain editor
         * @return terrain editor
         */
-        inline ITerrainEditor *             GetTerrainEditor() {return mTerrainEditor;};
+        inline ITerrainEditor *         GetTerrainEditor() {return mTerrainEditor;};
         /**
         * Fetches terrain editor object (actual terrain)
         * @return terrain editor object (actual terrain)
         */
-        inline CBaseEditor *                GetTerrainEditorObject() {return mTerrainEditorObject;};
+        inline CBaseEditor *            GetTerrainEditorObject() {return mTerrainEditorObject;};
         /**
         * Fetches paging editor
         * @return paging editor
         */
-        inline IPagingEditor *              GetPagingEditor() {return mPagingEditor;};
+        inline IPagingEditor *          GetPagingEditor() {return mPagingEditor;};
         /**
         * Fetches paging editor object
         * @return paging editor object
         */
-        inline CBaseEditor *                GetPagingEditorObject() {return mPagingEditorObject;};
+        inline CBaseEditor *            GetPagingEditorObject() {return mPagingEditorObject;};
         /**
         * Fetches first scene manager
         * @return first scene manager
         */
-        Ogre::SceneManager *                GetFirstSceneManager();
+        Ogre::SceneManager *            GetFirstSceneManager();
         /**
         * Tests if the scene is modified
         * @return true if scene is modified, otherwise false
         */
-        inline bool                         IsSceneModified() {return mIsSceneModified;};
+        inline bool                      IsSceneModified() {return mIsSceneModified;};
         /**
         * Sets modified flag when scene has been modified
         * @param modified true if scene was modified, otherwise false
         */
-        void                                SetSceneModified(bool modified);
+        void                             SetSceneModified(bool modified);
         /**
         * Sets modified flag only if the value is true (Additive)
         * @param state new state
         */
-        void                                ChangeSceneModified(bool state);
+        void                             ChangeSceneModified(bool state);
         /**
         * Hides the selection rectangle (destroys it)
         */
-        void                                HideSelectionRect();
+        void                             HideSelectionRect();
         /**
         * Creates and shows selection rectangle
         * @param size rectangle' boundaries (x - left, y - top, z - right, w - bottom)
         */
-        void                                ShowSelectionRect(Ogre::Vector4 size);
+        void                             ShowSelectionRect(Ogre::Vector4 size);
         /**
         * Highlights gizmo(s)
         * @param ID gizmo axis(i) flag(s) to highlight 
         * @see AXISTYPE
         */
-        void                                HighlightGizmo(int ID);
+        void                             HighlightGizmo(int ID);
         /**
         * Sets new gizmo mode 
         * @param mode new gizmo mode flag(s) 
         * @see EDITORTOOLS
         */
-        void                                SetGizmoMode(int mode);
+        void                             SetGizmoMode(int mode);
         /**
         * Fetches light visibility
         * @return true if light(s) are visible, otherwise false
         */
-        inline bool                         GetLightVisiblity() {return mGlobalLightVisiblity;};
+        inline bool                      GetLightVisiblity() {return mGlobalLightVisiblity;};
         /**
         * Sets light visibility
         * @param visibility new light visibility
         */
-        void                                SetLightVisiblity(bool visibility); 
+        void                             SetLightVisiblity(bool visibility); 
         /**
         * Fetches camera visibility state
         * @return true if camera(s) is visible, otherwise false
         */
-        inline bool                         GetCameraVisiblity() {return mGlobalCameraVisiblity;};
+        inline bool                      GetCameraVisiblity() {return mGlobalCameraVisiblity;};
         /**
         * Sets camera visibility
         * @param visibility new camera visibility
         */
-        void                                SetCameraVisiblity(bool visibility);
+        void                             SetCameraVisiblity(bool visibility);
         /**
         * Fetches multi-selection editor handle
         * @return multi-selection editor handle
         */
-        CMultiSelEditor *                   GetSelection();
+        CMultiSelEditor *                GetSelection();
         /**
         * Fetches active script interpreter handle
         * @return active script interpreter handle
         */
-        OgitorsScriptInterpreter *          GetScriptInterpreter() { return mScriptInterpreter; };
+        OgitorsScriptInterpreter *       GetScriptInterpreter() { return mScriptInterpreter; };
         /**
         * Fetches a named script interpreter handle
         * @param typeName the type name of the interpreter
         * @return a named script interpreter handle
         */
-        OgitorsScriptInterpreter *          GetScriptInterpreter(const Ogre::String& typeName) { return mScriptInterpreterList[typeName]; };
+        OgitorsScriptInterpreter *       GetScriptInterpreter(const Ogre::String& typeName) { return mScriptInterpreterList[typeName]; };
         /**
         * Recursively fills a treeview with object names and icons
         * @param pEditor an editor from which to retrieve objects
@@ -760,195 +699,189 @@ namespace Ogitors
         /**
         * Renders viewport windows after they were resized
         */
-        void                                RenderWindowResized();
+        void                             RenderWindowResized();
         /**
         * Sets background clearing flag
         * @param bClear clearing flag
         */
-        inline void                         ClearScreenBackground(bool bClear) {mClearScreenBackground = bClear;};
+        inline void                      ClearScreenBackground(bool bClear) {mClearScreenBackground = bClear;};
         /**
         * Fetches background clearing flag
         * @return background clearing flag
         */
-        inline bool                         IsClearScreenNeeded() {return mClearScreenBackground;};
+        inline bool                      IsClearScreenNeeded() {return mClearScreenBackground;};
+        /**
+        * Fetches a list of editor preferences
+        * @return list of editor preferences
+        */
+        PreferenceEditorVector           GetPreferenceEditorList() {return mPreferenceEditors;};
+        /**
+        * Registers new preferences for the editor
+        * @param regStruct new preferences description
+        */
+        void                             RegisterPreferenceEditor(PreferenceEditorRegistrationStruct &regStruct);
         /**
         * Registers a new drag&drop handler for render window
         * @param source pointer to the drag&drop source to be handled
         * @param handler pointer to the handler class for the drag&drop events originating from source
         */
-        void                                RegisterDragDropHandler(void *source, DragDropHandler *handler);
+        void                             RegisterDragDropHandler(void *source, DragDropHandler *handler);
         /**
         * UnRegisters a drag&drop handler for render window
         * @param source pointer to the drag&drop source to be handled
         * @param handler pointer to the handler class for the drag&drop events originating from source
         */
-        void                                UnRegisterDragDropHandler(void *source, DragDropHandler *handler);
+        void                             UnRegisterDragDropHandler(void *source, DragDropHandler *handler);
         /**
         * Registers QWidget-type toolbar
         * @param toolbar QWidget-type toolbar
         */
-        void                                RegisterToolBar(void *pluginIdentifier, void *toolbar);
+        void                             RegisterToolBar(void *pluginIdentifier, void *toolbar);
         /**
         * Fetches a list of toolbars
         * @return list of toolbar handles
         */
-        std::vector<void*>                  GetToolBars() {return mToolBars;};
+        std::vector<void*>               GetToolBars() {return mToolBars;};
         /**
         * Registers QDockWidget-type dockwidget
         * @param dockwidget QDockWidget-type dockwidget
         */
-        void                                RegisterDockWidget(void *pluginIdentifier, const DockWidgetData& data);
+        void                             RegisterDockWidget(void *pluginIdentifier, const DockWidgetData& data);
         /**
         * Registers QWidget-type Tab Window
         * @param widget QWidget-type Tab Window
         */
-        void                                RegisterTabWidget(void *pluginIdentifier, const TabWidgetData& data);
-        /**
-        * Registers new preferences for the editor
-        * @param QWidget-type data
-        */
-        void                                RegisterPreferenceEditor(void *pluginIdentifier, PreferencesEditorData& data);
+        void                             RegisterTabWidget(void *pluginIdentifier, const TabWidgetData& data);
         /**
         * Fetches a list of dockwidgets
         * @return list of dockwidget info
         */
-        DockWidgetDataList                  GetDockWidgets() {return mDockWidgets;};
+        DockWidgetDataList               GetDockWidgets() {return mDockWidgets;};
         /**
         * Fetches a list of tabwidgets
         * @return list of tabwidget info
         */
-        TabWidgetDataList                   GetTabWidgets() {return mTabWidgets;};
-        /**
-        * Fetches a list of editor preferences
-        * @return list of editor preferences
-        */
-        PreferencesEditorDataList           GetPreferencesEditorList() {return mPrefEditors;};
+        TabWidgetDataList                GetTabWidgets() {return mTabWidgets;};
         /**
         * Initializes recent files list with given entries
         * @param list a vector to be used as the current recent files list
         */
-        void                                InitRecentFiles(UTFStringVector& list);
+        void                             InitRecentFiles(UTFStringVector& list);
         /**
         * Adds an entry to recent files list, moving it to top
         * @param entry the string to be added to the list
         */
-        void                                AddToRecentFiles(const Ogre::UTFString& entry);
+        void                             AddToRecentFiles(const Ogre::UTFString& entry);
         /**
         * Fetches the list of recent files, the order is: The last used is first in the list
         * @param list a vector to be flled with ordered recent files list
         */
-        void                                GetRecentFiles(UTFStringVector& list);
+        void                             GetRecentFiles(UTFStringVector& list);
         /**
         * Redirects all mouse events to the registered listener class
         * @param listener class to redirect mouse events to
         */
-        inline void                         CaptureMouse(MouseListener *listener) { mMouseListener = listener; };
+        inline void CaptureMouse(MouseListener *listener) { mMouseListener = listener; };
         /**
         * Restores redirection of mouse events to the viewports
         */
-        inline void                         ReleaseMouse() { mMouseListener = 0; };
+        inline void ReleaseMouse() { mMouseListener = 0; };
         /**
         * Redirects all keyboard events to the registered listener class
         * @param listener class to redirect keyboard events to
         */
-        inline void                         CaptureKeyboard(KeyboardListener *listener) { mKeyboardListener = listener; };
+        inline void CaptureKeyboard(KeyboardListener *listener) { mKeyboardListener = listener; };
 
         /**
         * Restores redirection of keyboard events to the viewports
         */
-        inline void                         ReleaseKeyboard() { mKeyboardListener = 0; };
+        inline void ReleaseKeyboard() { mKeyboardListener = 0; };
 
         /**
         * Fetches names of models in user assets folders
         * @return names of models in user assets folders
         */
-        static PropertyOptionsVector        *GetModelNames() {return &mModelNames;};
+        static PropertyOptionsVector      *GetModelNames() {return &mModelNames;};
 
         /**
         * Fetches names of materials in user assets folders
         * @return names of materials in user assets folders
         */
-        static PropertyOptionsVector        *GetMaterialNames() {return &mMaterialNames;};
+        static PropertyOptionsVector      *GetMaterialNames() {return &mMaterialNames;};
  
         /**
         * Fetches mapping of models to their default materials
         * @return mapping of models to their default materials
         */
-        static Ogre::NameValuePairList      *GetModelMaterialMap() {return &mModelMaterialMap;}
+        static Ogre::NameValuePairList    *GetModelMaterialMap() {return &mModelMaterialMap;}
 
         /**
         * Fetches a list of properties containing skybox materials
         * @return a list of properties containing skybox material
         */
-        static PropertyOptionsVector        *GetSkyboxMaterials() { return &mSkyboxMaterials; }
+        static PropertyOptionsVector      *GetSkyboxMaterials() { return &mSkyboxMaterials; }
 
         /**
         * Fetches a list of properties containing particle templates
         * @return a list of properties containing particle templates
         */
-        static PropertyOptionsVector        *GetParticleTemplateNames() { return &mParticleTemplateNames; }
+        static PropertyOptionsVector      *GetParticleTemplateNames() { return &mParticleTemplateNames; }
 
         /**
         * Fetches names of auto track targets in the scene
         * @return names of auto track targets in the scene
         */
-        static PropertyOptionsVector        *GetAutoTrackTargets() {return &mAutoTrackTargets;};
+        static PropertyOptionsVector      *GetAutoTrackTargets() {return &mAutoTrackTargets;};
 
         /**
         * Fetches names of layers in the scene
         * @return names of layers in the scene
         */
-        static PropertyOptionsVector        *GetLayerNames() {return &mLayerNames;};
+        static PropertyOptionsVector      *GetLayerNames() {return &mLayerNames;};
 
         /**
         * Fetches diffuse texture name(s) property(ies)
         * @return diffuse texture name(s) property(ies)
         */
-        static PropertyOptionsVector        *GetTerrainDiffuseTextureNames() { return &mTerrainDiffuseTextureNames; }
+        static PropertyOptionsVector *GetTerrainDiffuseTextureNames() { return &mTerrainDiffuseTextureNames; }
 
         /**
         * Fetches normal texture name(s) property(ies)
         * @return normal texture name(s) property(ies)
         */
-        static PropertyOptionsVector        *GetTerrainNormalTextureNames() { return &mTerrainNormalTextureNames; }
+        static PropertyOptionsVector *GetTerrainNormalTextureNames() { return &mTerrainNormalTextureNames; }
 
         /**
         * Fetches plant material name(s) property(ies)
         * @return plant material name(s) property(ies)
         */
-        static PropertyOptionsVector        *GetTerrainPlantMaterialNames() { return &mTerrainPlantMaterialNames; }
+        static PropertyOptionsVector *GetTerrainPlantMaterialNames() { return &mTerrainPlantMaterialNames; }
 
         /**
         * Fetches names of scripts in user project folders
         * @return names of script in user project folders
         */
-        static PropertyOptionsVector        *GetScriptNames() {return &mScriptNames;};
+        static PropertyOptionsVector      *GetScriptNames() {return &mScriptNames;};
 
         /**
         * Sets Gizmo scaling factor
         * @param names of auto track targets in the scene
         */
-        void                                SetGizmoScale(Ogre::Real value);
+        void                               SetGizmoScale(Ogre::Real value);
 
         /**
         * Fetches gizmo scaling factor
         * @return gizmo's current scaling factor
         */
-        Ogre::Real                          GetGizmoScale() {return mGizmoScale;};
+        Ogre::Real                         GetGizmoScale() {return mGizmoScale;};
 
-        void                                ToggleLayerVisibility(int index);
+        void                               ToggleLayerVisibility(int index);
 
-        void                                SetWalkAroundMode(bool walk) { mWalkAroundMode = walk; };
-        bool                                GetWalkAroundMode() { return mWalkAroundMode; };
+        void                               SetWalkAroundMode(bool walk) { mWalkAroundMode = walk; };
+        bool                               GetWalkAroundMode() { return mWalkAroundMode; };
 
-        const PluginEntryMap*               GetPluginMap() {return &mPlugins; };
+        const PluginEntryMap*              GetPluginMap() {return &mPlugins; };
 
-        /**
-        * Unloads one specific editor plugin
-        */
-        void                                UnLoadPlugin(void *identifier);
-
-        void                                DestroyResourceGroup(const Ogre::String& resGrpName);
 
         ///EVENTS
         /**
@@ -1046,7 +979,6 @@ namespace Ogitors
         void OnMouseWheel (Ogre::Vector2 point, float delta, unsigned int buttons);
 
     private:
-        OFS::OfsPtr *                mProjectFile;
         LoadState                    mLoadState;
         RunState                     mRunState;
         unsigned int                 mEditorTool;
@@ -1095,22 +1027,21 @@ namespace Ogitors
         Ogre::SceneNode    *mGizmoY;                                    /** Y axis widget node handle */
         Ogre::SceneNode    *mGizmoZ;                                    /** Z axis widget node handle */
         Ogre::Entity       *mGizmoEntities[6];                          /** Gizmo handles */
-        bool                mWorldSpaceGizmoOrientation;                /** Is the gizmo Orientation in World Space? */ 
+        bool                mWorldSpaceGizmoOrientation;                /** Is the Gizmo Orientation in World Space? */ 
         int                 mOldGizmoMode;                              /** Previous gizmo mode (@see EDITORTOOLS) */
         int                 mOldGizmoAxis;                              /** Previous gizmo axis along which transformation has occured */
         std::vector<int>    mObjectDisplayOrder;                        /** Scene object(s) rendering order list */
         bool                mClearScreenBackground;                     /** Flag signifying if it is time to clear screen background (used in paintEvent) */
         bool                mWalkAroundMode;                            /** Is the camera movement state WalkAround? */
 
-        std::vector<void*>          mToolBars;                          /** Additional Qt toolbars to display in Ogitor */
-        DockWidgetDataList          mDockWidgets;                       /** Additional Qt dock widgets to display in Ogitor */
-        TabWidgetDataList           mTabWidgets;                        /** Additional Qt tab widgets to display in Ogitor */
-        PreferencesEditorDataList   mPrefEditors;                       /** Additional Qt widgets to display in Ogitor preferences*/
 
-        Ogre::StringVector          mDisabledPluginPaths;               /** Paths to plugins that are disabled via the preferences */
-        
-        DragDropHandlerMap          mDragDropHandlers;                  /** Drag Drop Handlers list */
-        void                       *mActiveDragSource;                  /** Current Drag Source */
+        std::vector<void*>  mToolBars;                                  /** Additional Qt toolbars to display in Ogitor */
+        DockWidgetDataList  mDockWidgets;                               /** Additional Qt dock widgets to display in Ogitor */
+        TabWidgetDataList   mTabWidgets;                                /** Additional Qt tab widgets to display in Ogitor */
+
+        PreferenceEditorVector     mPreferenceEditors;                  /** Editor preferences list */
+        DragDropHandlerMap         mDragDropHandlers;                   /** Drag Drop Handlers list */
+        void                      *mActiveDragSource;                   /** Current Drag Source */
 
         static PropertyOptionsVector mModelNames;                       /** List of model names in the current user assets directories */
         static PropertyOptionsVector mMaterialNames;                    /** List of material names in the current user assets directories */
@@ -1129,16 +1060,10 @@ namespace Ogitors
         */
         void            ClearEditors();
         /**
-        * Sets the plugin paths of the plugins that are disabled
-        * @param vector with the plugin paths
-        */
-        void            SetDisabledPluginPaths(Ogre::StringVector disabledPluginPaths) 
-                        {mDisabledPluginPaths = disabledPluginPaths;};
-        /**
         * Loads binary plugin file
         * @param pluginPath the path to the plugin library file
         */
-        void            LoadPlugin(Ogre::String pluginPath, bool noRegistration = false);
+        void            LoadPlugin(Ogre::String pluginPath);
         /**
         * Unloads all editor plugins
         */
@@ -1146,49 +1071,35 @@ namespace Ogitors
         /**
         * Finds and registers all editor object types
         */
-        void            RegisterAllEditorObjects(Ogre::StringVector* pDisabledPluginPaths);
+        void RegisterAllEditorObjects();
         /**
         * Creates gizmo objects
         */
-        void            CreateGizmo();
+        void CreateGizmo();
         /**
         * Destroys gizmo objects
         * @return
         */
-        void            DestroyGizmo();
+        void DestroyGizmo();
         /**
         * Updates position of gizmo objects
         * @return
         */
-        void            UpdateGizmo();
+        void UpdateGizmo();
         /**
         * Fills the scene tree view with objects in the scene
         */
-        void            FillTreeView();
+        void FillTreeView();
         /**
         * Registers a new editor object factory
         * @param factory pointer to new editor object factory to register
         */
         void            _RegisterEditorFactory(CBaseEditorFactory *factory);
         /**
-        * Setter function for LoadState
+        * Setter funtion for LoadState
         * @param state new state
         */
         void             setLoadState(LoadState state);
 
-    };
-
-    /*!
-        Class to handle all resource loading conflicts by unloading the existing resource
-        and replacing it with the newly attempted to be loaded one
-    */
-    class OgitorExport ResourceLoadingListener : public Ogre::ResourceLoadingListener
-    {
-    public:
-        bool resourceCollision(Ogre::Resource *resource, Ogre::ResourceManager *resourceManager);
-
-        Ogre::DataStreamPtr resourceLoading(const Ogre::String &name, const Ogre::String &group, Ogre::Resource *resource) {return Ogre::DataStreamPtr();};
-
-        void resourceStreamOpened(const Ogre::String &name, const Ogre::String &group, Ogre::Resource *resource, Ogre::DataStreamPtr& dataStream){};
     };
 }

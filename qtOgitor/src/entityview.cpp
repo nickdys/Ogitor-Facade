@@ -160,7 +160,7 @@ void EntityViewWidget::_createImages(ImageMap& retlist)
     v->setClearEveryFrame( true );
     v->setBackgroundColour(Ogre::ColourValue(0,0,0,0));
 
-    Ogre::StringVectorPtr pList = Ogre::ResourceGroupManager::getSingleton().findResourceNames(PROJECT_RESOURCE_GROUP,"*.mesh",false);
+    Ogre::StringVectorPtr pList = Ogre::ResourceGroupManager::getSingleton().findResourceNames("ProjectResources","*.mesh",false);
     
     Ogre::Entity *mEntity;
 
@@ -295,7 +295,7 @@ bool EntityViewWidget::OnDragMove(Ogre::Viewport *vp, unsigned int modifier, Ogr
 
     bool hitfound = false;
 
-    if(modifier & Ogitors::DragDropControlModifier)
+    if(modifier & Ogitors::DragDropShiftModifier)
     {
         hitfound = OgitorsRoot::getSingletonPtr()->GetViewport()->GetHitPosition(mouseRay, vPos, mDragData.Object->getName());
     }

@@ -30,10 +30,9 @@
 /// THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef CAELUM_EDITOR_H
-#define CAELUM_EDITOR_H
+#pragma once
 
-#include <Caelum.h>
+#include <CAELUM/Caelum.h>
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
    #ifdef PLUGIN_EXPORT
@@ -67,8 +66,6 @@ namespace Ogitors
         virtual bool         update(float timePassed);
 
         virtual void         createProperties(Ogitors::OgitorsPropertyValueMap &params);
-
-        virtual TiXmlElement *exportDotScene(TiXmlElement *pParent);
 
     protected:
         Caelum::CaelumSystem *mHandle;
@@ -189,8 +186,4 @@ namespace Ogitors
 
 extern "C" bool PluginExport dllStartPlugin(void *identifier, Ogre::String& name);
 
-extern "C" bool PluginExport dllGetPluginName(Ogre::String& name);
-
 extern "C" bool PluginExport dllStopPlugin(void);
-
-#endif

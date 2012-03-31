@@ -30,8 +30,7 @@
 /// THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef EVENT_H
-#define EVENT_H
+#pragma once
 
 namespace Ogitors
 {
@@ -42,12 +41,11 @@ namespace Ogitors
     {
     public:
         virtual ~IEvent() = 0;
-        virtual const event_id_type& getID() const = 0;
+	
+	    virtual const event_id_type& getID() const = 0;
 
     protected:
         /// Protected constructor, only derived classes can be constructed.
         IEvent() {}
     };
 }
-
-#endif

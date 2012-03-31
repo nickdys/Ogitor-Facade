@@ -30,20 +30,13 @@
 /// THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef EVENT_MANAGER_H
-#define EVENT_MANAGER_H
-
-#include "OgitorsSingleton.h"
+#pragma once
 
 #define EVENT_CALLBACK(classname , function) Ogitors::EventManager::EventCallBack::from_method<classname, &classname::function>(this)
-
-//-----------------------------------------------------------------------------------------
 
 namespace Ogitors
 {
     class IEvent;
-
-    //-----------------------------------------------------------------------------------------
     
     template<typename T> T event_cast(IEvent *evt)
     {
@@ -53,8 +46,6 @@ namespace Ogitors
         return static_cast<T>(evt);
 #endif
     }
-
-    //-----------------------------------------------------------------------------------------
 
     class event_callback
     {
@@ -93,9 +84,8 @@ namespace Ogitors
         }
     };
 
-    //-----------------------------------------------------------------------------------------
 
-    class OgitorExport EventManager : public Singleton<EventManager>
+    class OgitorExport EventManager
     {
     public:
         typedef event_callback EventCallBack;
@@ -109,19 +99,14 @@ namespace Ogitors
             void           *mReceiver;
         };
 
-        // Built-in Ogitor events
-        static const event_id_type LOAD_STATE_CHANGE;
-        static const event_id_type MODIFIED_STATE_CHANGE;
-        static const event_id_type UPDATE_FRAME;
-        static const event_id_type UNDOMANAGER_NOTIFICATION;
-        static const event_id_type RUN_STATE_CHANGE;
-        static const event_id_type EDITOR_TOOL_CHANGE;
-        static const event_id_type TERRAIN_EDITOR_CHANGE;
-        static const event_id_type AFTER_SCENE_EXPORT;
-        static const event_id_type GLOBAL_PREPARE_VIEW;
-
         typedef std::map<void *, listener_data> listener_map;
         typedef std::map<event_id_type, listener_map> event_handler_map;
+
+        EventManager();
+        ~EventManager();
+
+        inline static EventManager* Instance() { return ms_Singleton; }
+        inline static bool          Valid() { return (ms_Singleton != 0); } 
 
         void sendEvent(void *sender, void *receiver, IEvent* event);
 	
@@ -129,12 +114,8 @@ namespace Ogitors
         void disconnectEvent(const event_id_type& id, void *listener);
 
     private:
+
+        static EventManager* ms_Singleton;
         event_handler_map    mEventHandlers;
     };
 }
-
-//-----------------------------------------------------------------------------------------
-
-#endif
-
-//-----------------------------------------------------------------------------------------

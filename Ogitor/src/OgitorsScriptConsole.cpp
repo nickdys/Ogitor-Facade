@@ -79,15 +79,6 @@ namespace Ogitors
         return mOutput.size();
     }
 
-    // Adds a line to output
-    void OgitorsScriptConsole::addOutput(const std::string& text)
-    {
-        OGRE_LOCK_AUTO_MUTEX
-        
-        mOutput.push_back(text);
-    }
-
-    
     // Insert (another) line of text into the interpreter.
     OgitorsScriptConsole::State OgitorsScriptConsole::insertLine( std::string& line, bool fInsertInOutput )
     {

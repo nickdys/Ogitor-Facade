@@ -29,15 +29,14 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////*/
-
-#ifndef DEFAULT_EVENT_H
-#define DEFAULT_EVENT_H
+#pragma once
 
 namespace Ogitors
 {
-    class OgitorExport LoadStateChangeEvent : public IEvent
+    class OgitorExport LoadStateChangeEvent: public IEvent
     {
     public:
+
         LoadStateChangeEvent(LoadState type) : mType(type) {}
         ~LoadStateChangeEvent() {}
 	
@@ -49,11 +48,10 @@ namespace Ogitors
         LoadState mType;
     };
 
-    //-----------------------------------------------------------------------------------------
-
-    class OgitorExport RunStateChangeEvent : public IEvent
+    class OgitorExport RunStateChangeEvent: public IEvent
     {
     public:
+
         RunStateChangeEvent(RunState type) : mType(type) {}
         ~RunStateChangeEvent() {}
 	
@@ -65,11 +63,10 @@ namespace Ogitors
         RunState mType;
     };
 
-    //-----------------------------------------------------------------------------------------
-
-    class OgitorExport SceneModifiedChangeEvent : public IEvent
+    class OgitorExport SceneModifiedChangeEvent: public IEvent
     {
     public:
+
         SceneModifiedChangeEvent(bool state) : mState(state) {}
         ~SceneModifiedChangeEvent() {}
 	
@@ -81,11 +78,10 @@ namespace Ogitors
         bool mState;
     };
 
-    //-----------------------------------------------------------------------------------------
-
-    class OgitorExport TerrainEditorChangeEvent : public IEvent
+    class OgitorExport TerrainEditorChangeEvent: public IEvent
     {
     public:
+
         TerrainEditorChangeEvent(bool active, ITerrainEditor* handle) : mActive(active), mHandle(handle) {}
         ~TerrainEditorChangeEvent() {}
 	
@@ -99,11 +95,10 @@ namespace Ogitors
         ITerrainEditor* mHandle;
     };
 
-    //-----------------------------------------------------------------------------------------
-
-    class OgitorExport EditorToolChangeEvent : public IEvent
+    class OgitorExport EditorToolChangeEvent: public IEvent
     {
     public:
+
         EditorToolChangeEvent(unsigned int type) : mType(type) {}
         ~EditorToolChangeEvent() {}
 	
@@ -115,9 +110,7 @@ namespace Ogitors
         unsigned int mType;
     };
 
-    //-----------------------------------------------------------------------------------------
-
-    class OgitorExport UpdateFrameEvent : public IEvent
+    class OgitorExport UpdateFrameEvent: public IEvent
     {
     public:
         UpdateFrameEvent(float timePassed) : mTimePassed(timePassed) {}
@@ -131,11 +124,10 @@ namespace Ogitors
         float mTimePassed;
     };
 
-    //-----------------------------------------------------------------------------------------
-
-    class OgitorExport UndoManagerNotificationEvent : public IEvent
+    class OgitorExport UndoManagerNotificationEvent: public IEvent
     {
     public:
+
         UndoManagerNotificationEvent(int type, bool enabled, std::string& caption) : mType(type), mEnabled(enabled), mCaption(caption) {}
         ~UndoManagerNotificationEvent() {}
 	
@@ -151,37 +143,4 @@ namespace Ogitors
         std::string          mCaption;
     };
 
-    //-----------------------------------------------------------------------------------------
-
-    class OgitorExport AfterSceneExportEvent : public IEvent
-    {
-    public:
-        AfterSceneExportEvent(std::string name) : mName(name) {}
-        ~AfterSceneExportEvent() {}
-
-        const event_id_type& getID() const { return mID; }
-        const std::string& getName() const { return mName; }
-
-    private:
-        static event_id_type    mID;
-        std::string             mName;
-    };
-
-    //-----------------------------------------------------------------------------------------
-
-    class OgitorExport GlobalPrepareViewEvent : public IEvent
-    {
-    public:
-        GlobalPrepareViewEvent() {}
-        ~GlobalPrepareViewEvent() {}
-
-        const event_id_type& getID() const { return mID; }
-
-    private:
-        static event_id_type    mID;
-    };
-
-    //-----------------------------------------------------------------------------------------
 }
-
-#endif

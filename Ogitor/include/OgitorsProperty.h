@@ -293,18 +293,6 @@ namespace Ogitors
             }
         }
 
-        /** Construct a property which is able to directly call a given 
-        getter and setter on a specific object instance, via functors.
-        */
-        OgitorsProperty(OgitorsPropertyDef* def, T value, unsigned int tag, setter_func setter)
-            : OgitorsPropertyBase(def, tag)
-        {
-            mValue = value;
-            mOldValue = value;
-            mSetter = OGRE_NEW setter_func;
-            *mSetter = setter; 
-        }
-
         inline void setSetterFunction(setter_func* func)
         {
             OGRE_DELETE mSetter;
@@ -496,18 +484,6 @@ namespace Ogitors
             mOldValue = value;
             mSetter = OGRE_NEW setter_func;
             *mSetter = *setter; 
-        }
-
-        /** Construct a property which is able to directly call a given 
-        getter and setter on a specific object instance, via functors.
-        */
-        OgitorsParentProperty(OgitorsPropertyDef* def, unsigned long value, setter_func setter)
-            : OgitorsPropertyBase(def, 0)
-        {
-            mValue = value;
-            mOldValue = value;
-            mSetter = OGRE_NEW setter_func;
-            *mSetter = setter; 
         }
 
         /** Set the property value.

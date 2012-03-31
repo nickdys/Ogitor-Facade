@@ -30,12 +30,11 @@
 /// THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef HYDRAX_WATER_EDITOR_H
-#define HYDRAX_WATER_EDITOR_H
+#pragma once
 
-#include "Hydrax.h"
-#include "Noise/Perlin/Perlin.h"
-#include "Modules/ProjectedGrid/ProjectedGrid.h"
+#include "HYDRAX/Hydrax.h"
+#include "HYDRAX/Noise/Perlin/Perlin.h"
+#include "HYDRAX/Modules/ProjectedGrid/ProjectedGrid.h"
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
    #ifdef PLUGIN_EXPORT
@@ -79,8 +78,6 @@ namespace Ogitors
         inline virtual void    *getHandle() {return static_cast<void*>(mHandle);};
         virtual Ogre::SceneManager *getSceneManager();
 
-        virtual TiXmlElement *exportDotScene(TiXmlElement *pParent);
-
     protected:
         Hydrax::Hydrax                *mHandle;
         Hydrax::Module::ProjectedGrid *mModule;
@@ -91,7 +88,7 @@ namespace Ogitors
         OgitorsProperty<bool>              *mCaelumIntegration;
 
         OgitorsProperty<Ogre::Real>    *mPlanesError;
-        OgitorsProperty<int>           *mShaderMode;
+        OgitorsProperty<int>        *mShaderMode;
         OgitorsProperty<Ogre::Real>    *mFullReflectionDistance;
         OgitorsProperty<Ogre::Real>    *mGlobalTransparency;
         OgitorsProperty<Ogre::Real>    *mNormalDistortion;
@@ -105,54 +102,54 @@ namespace Ogitors
         OgitorsProperty<bool> *mComponentUnderwaterReflections;
         OgitorsProperty<bool> *mComponentUnderwaterGodrays;
 
-        OgitorsProperty<Ogre::Vector3>      *mSunPosition;
-        OgitorsProperty<Ogre::Real>         *mSunStrength;
-        OgitorsProperty<Ogre::Real>         *mSunArea;
-        OgitorsProperty<Ogre::ColourValue>  *mSunColour;
+        OgitorsProperty<Ogre::Vector3>        *mSunPosition;
+        OgitorsProperty<Ogre::Real>            *mSunStrength;
+        OgitorsProperty<Ogre::Real>            *mSunArea;
+        OgitorsProperty<Ogre::ColourValue>    *mSunColour;
 
-        OgitorsProperty<Ogre::Real>         *mFoamStart;
-        OgitorsProperty<Ogre::Real>         *mFoamMaxDistance;
-        OgitorsProperty<Ogre::Real>         *mFoamScale;
-        OgitorsProperty<Ogre::Real>         *mFoamTransparency;
+        OgitorsProperty<Ogre::Real>    *mFoamStart;
+        OgitorsProperty<Ogre::Real>    *mFoamMaxDistance;
+        OgitorsProperty<Ogre::Real>    *mFoamScale;
+        OgitorsProperty<Ogre::Real>    *mFoamTransparency;
 
-        OgitorsProperty<Ogre::Real>         *mDepthLimit;
-        OgitorsProperty<Ogre::Real>         *mSmoothPower;
+        OgitorsProperty<Ogre::Real>    *mDepthLimit;
+        OgitorsProperty<Ogre::Real>    *mSmoothPower;
 
-        OgitorsProperty<Ogre::Real>         *mCausticsScale;
-        OgitorsProperty<Ogre::Real>         *mCausticsPower;
-        OgitorsProperty<Ogre::Real>         *mCausticsEnd;
+        OgitorsProperty<Ogre::Real>    *mCausticsScale;
+        OgitorsProperty<Ogre::Real>    *mCausticsPower;
+        OgitorsProperty<Ogre::Real>    *mCausticsEnd;
 
-        OgitorsProperty<Ogre::Vector3>      *mGodraysExposure;
-        OgitorsProperty<Ogre::Real>         *mGodraysIntensity;
-        OgitorsProperty<Ogre::Real>         *mGodraysSpeed;
-        OgitorsProperty<int>                *mGodraysNumberOfRays;
-        OgitorsProperty<Ogre::Real>         *mGodraysSize;
-        OgitorsProperty<bool>               *mGodraysIntersections;
+        OgitorsProperty<Ogre::Vector3>    *mGodraysExposure;
+        OgitorsProperty<Ogre::Real>        *mGodraysIntensity;
+        OgitorsProperty<Ogre::Real>        *mGodraysSpeed;
+        OgitorsProperty<int>            *mGodraysNumberOfRays;
+        OgitorsProperty<Ogre::Real>        *mGodraysSize;
+        OgitorsProperty<bool>            *mGodraysIntersections;
 
-        OgitorsProperty<int>                *mRttReflection;
-        OgitorsProperty<int>                *mRttRefraction;
-        OgitorsProperty<int>                *mRttDepth;
-        OgitorsProperty<int>                *mRttDepthReflection;
-        OgitorsProperty<int>                *mRttDepthAIP;
-        OgitorsProperty<int>                *mRttGpuNormalMap;
+        OgitorsProperty<int>    *mRttReflection;
+        OgitorsProperty<int>    *mRttRefraction;
+        OgitorsProperty<int>    *mRttDepth;
+        OgitorsProperty<int>    *mRttDepthReflection;
+        OgitorsProperty<int>    *mRttDepthAIP;
+        OgitorsProperty<int>    *mRttGpuNormalMap;
 
-        OgitorsProperty<Ogre::String>       *mModuleName;
-        OgitorsProperty<Ogre::Real>         *mPGChoppyStrength;
-        OgitorsProperty<bool>               *mPGChoppyWaves;
-        OgitorsProperty<int>                *mPGComplexity;
-        OgitorsProperty<float>              *mPGElevation;
-        OgitorsProperty<bool>               *mPGForceRecalculateGeometry;
-        OgitorsProperty<bool>               *mPGSmooth;
-        OgitorsProperty<float>              *mPGStrength;
+        OgitorsProperty<Ogre::String>    *mModuleName;
+        OgitorsProperty<Ogre::Real>        *mPGChoppyStrength;
+        OgitorsProperty<bool>            *mPGChoppyWaves;
+        OgitorsProperty<int>            *mPGComplexity;
+        OgitorsProperty<float>            *mPGElevation;
+        OgitorsProperty<bool>            *mPGForceRecalculateGeometry;
+        OgitorsProperty<bool>            *mPGSmooth;
+        OgitorsProperty<float>            *mPGStrength;
 
-        OgitorsProperty<Ogre::String>       *mNoiseModuleName;
-        OgitorsProperty<int>                *mNoiseOctaves;
-        OgitorsProperty<Ogre::Real>         *mNoiseScale;
-        OgitorsProperty<Ogre::Real>         *mNoiseFallOff;
-        OgitorsProperty<Ogre::Real>         *mNoiseAnimSpeed;
-        OgitorsProperty<Ogre::Real>         *mNoiseTimeMulti;
-        OgitorsProperty<Ogre::Real>         *mNoiseGpuStrength;
-        OgitorsProperty<Ogre::Vector3>      *mNoiseGpuLod;
+        OgitorsProperty<Ogre::String>    *mNoiseModuleName;
+        OgitorsProperty<int>            *mNoiseOctaves;
+        OgitorsProperty<Ogre::Real>        *mNoiseScale;
+        OgitorsProperty<Ogre::Real>        *mNoiseFallOff;
+        OgitorsProperty<Ogre::Real>        *mNoiseAnimSpeed;
+        OgitorsProperty<Ogre::Real>        *mNoiseTimeMulti;
+        OgitorsProperty<Ogre::Real>        *mNoiseGpuStrength;
+        OgitorsProperty<Ogre::Vector3>    *mNoiseGpuLod;
 
         CHydraxEditor(CBaseEditorFactory *factory);
         virtual ~CHydraxEditor();
@@ -254,8 +251,4 @@ namespace Ogitors
 
 extern "C" bool PluginExport dllStartPlugin(void *identifier, Ogre::String& name);
 
-extern "C" bool PluginExport dllGetPluginName(Ogre::String& name);
-
 extern "C" bool PluginExport dllStopPlugin(void);
-
-#endif

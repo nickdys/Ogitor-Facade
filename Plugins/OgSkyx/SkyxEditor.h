@@ -30,10 +30,9 @@
 /// THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef SKYX_EDITOR_H
-#define SKYX_EDITOR_H
+#pragma once
 
-#include <SkyX.h>
+#include <SKYX/SkyX.h>
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
    #ifdef PLUGIN_EXPORT
@@ -69,8 +68,6 @@ namespace Ogitors
         /// Gets the Handle to encapsulated object
         inline virtual void    *getHandle() {return static_cast<void*>(mHandle);};
         virtual Ogre::SceneManager *getSceneManager();
-
-        virtual TiXmlElement *exportDotScene(TiXmlElement *pParent);
 
     protected:
         SkyX::SkyX                *mHandle;
@@ -133,8 +130,4 @@ namespace Ogitors
 
 extern "C" bool PluginExport dllStartPlugin(void *identifier, Ogre::String& name);
 
-extern "C" bool PluginExport dllGetPluginName(Ogre::String& name);
-
 extern "C" bool PluginExport dllStopPlugin(void);
-
-#endif

@@ -30,6 +30,7 @@
 /// THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////*/
 
+#pragma once
 #include "tinyxml.h"
 #include "OgitorsPrerequisites.h"
 #include "OgitorsClipboardManager.h"
@@ -37,8 +38,6 @@
 #include "OgitorsSystem.h"
 #include "BaseEditor.h"
 #include "MultiSelEditor.h"
-
-#include "ofs.h"
 
 using namespace Ogitors;
 
@@ -145,25 +144,16 @@ bool OgitorsClipboardManager::copyToTemplate(CBaseEditor *object, const Ogre::St
         return false;
     
     Ogre::String filename;
-
-    OFS::OfsPtr& mFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-    
     if(isGeneralScope)
-    {
-        filename = OgitorsSystem::getSingletonPtr()->getProjectsDirectory() + "/Templates";
-        filename = OgitorsUtils::QualifyPath(filename);
-        OgitorsSystem::getSingletonPtr()->MakeDirectory(filename);
-    }
+        filename = OgitorsSystem::getSingletonPtr()->getProjectsDirectory() + "/Templates/";
     else
-    {
-        filename = "/Templates";
-        mFile->createDirectory(filename.c_str());
-    }
-    
-    
+        filename = OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectDir + "/Templates/";
+
+    filename = OgitorsUtils::QualifyPath(filename);
+    OgitorsSystem::getSingletonPtr()->MakeDirectory(filename);
     filename += "/" + templatename + ".otl";
 
-    std::stringstream outfile;
+    std::ofstream outfile(filename.c_str());
     outfile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
     outfile << "<TEMPLATES>\n";
     outfile << "  <OBJECTTEMPLATE name=\"";
@@ -173,16 +163,8 @@ bool OgitorsClipboardManager::copyToTemplate(CBaseEditor *object, const Ogre::St
     outfile << "  </OBJECTTEMPLATE>\n";
     outfile << "</TEMPLATES>\n";
 
-    if(isGeneralScope)
-    {
-        std::ofstream out_general(filename.c_str());
-        out_general << outfile.str();
-        out_general.close();
-    }
-    else
-    {
-        OgitorsUtils::SaveStreamOfs(outfile, filename);
-    }
+
+    outfile.close();
 
     ObjectTemplateMap::iterator rit;
     if(isGeneralScope)
@@ -207,24 +189,16 @@ bool OgitorsClipboardManager::copyToTemplateWithChildren(CBaseEditor *object, co
         return false;
 
     Ogre::String filename;
-    OFS::OfsPtr& mFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-    
     if(isGeneralScope)
-    {
-        filename = OgitorsSystem::getSingletonPtr()->getProjectsDirectory() + "/Templates";
-        filename = OgitorsUtils::QualifyPath(filename);
-        OgitorsSystem::getSingletonPtr()->MakeDirectory(filename);
-    }
+        filename = OgitorsSystem::getSingletonPtr()->getProjectsDirectory() + "/Templates/";
     else
-    {
-        filename = "/Templates";
-        mFile->createDirectory(filename.c_str());
-    }
-    
-    
+        filename = OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectDir + "/Templates/";
+
+    filename = OgitorsUtils::QualifyPath(filename);
+    OgitorsSystem::getSingletonPtr()->MakeDirectory(filename);
     filename += "/" + templatename + ".otl";
 
-    std::stringstream outfile;
+    std::ofstream outfile(filename.c_str());
     outfile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
     outfile << "<TEMPLATES>\n";
     outfile << "  <OBJECTTEMPLATE name=\"";
@@ -273,17 +247,7 @@ bool OgitorsClipboardManager::copyToTemplateWithChildren(CBaseEditor *object, co
     outfile << "  </OBJECTTEMPLATE>\n";
     outfile << "</TEMPLATES>\n";
 
-    if(isGeneralScope)
-    {
-        std::ofstream out_general(filename.c_str());
-        out_general << outfile.str();
-        out_general.close();
-    }
-    else
-    {
-        OgitorsUtils::SaveStreamOfs(outfile, filename);
-    }
-
+    outfile.close();
     return true;
 }
 //----------------------------------------------------------------------------------
@@ -298,26 +262,18 @@ bool OgitorsClipboardManager::copyToTemplateMulti(CMultiSelEditor *object, const
     if(oit == list.end())
         return false;
 
+    
     Ogre::String filename;
-
-    OFS::OfsPtr& mFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-
     if(isGeneralScope)
-    {
-        filename = OgitorsSystem::getSingletonPtr()->getProjectsDirectory() + "/Templates";
-        filename = OgitorsUtils::QualifyPath(filename) + "/";
-        OgitorsSystem::getSingletonPtr()->MakeDirectory(filename);
-    }
+        filename = OgitorsSystem::getSingletonPtr()->getProjectsDirectory() + "/Templates/";
     else
-    {
-        filename = "/Templates";
-        mFile->createDirectory(filename.c_str());
-    }
-    
-    
+        filename = OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ProjectDir + "/Templates/";
+
+    filename = OgitorsUtils::QualifyPath(filename);
+    OgitorsSystem::getSingletonPtr()->MakeDirectory(filename);
     filename += "/" + templatename + ".otl";
 
-    std::stringstream outfile;
+    std::ofstream outfile(filename.c_str());
     outfile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
     outfile << "<TEMPLATES>\n";
     outfile << "  <OBJECTTEMPLATE name=\"";
@@ -381,17 +337,7 @@ bool OgitorsClipboardManager::copyToTemplateMulti(CMultiSelEditor *object, const
     outfile << "  </OBJECTTEMPLATE>\n";
     outfile << "</TEMPLATES>\n";
 
-    if(isGeneralScope)
-    {
-        std::ofstream out_general(filename.c_str());
-        out_general << outfile.str();
-        out_general.close();
-    }
-    else
-    {
-        OgitorsUtils::SaveStreamOfs(outfile, filename);
-    }
-
+    outfile.close();
     return true;
 }
 //----------------------------------------------------------------------------------
@@ -521,57 +467,19 @@ bool OgitorsClipboardManager::doesTemplateRequirePlacement(const Ogre::String& t
 void OgitorsClipboardManager::addTemplatesFromFiles(Ogre::StringVector filenames, bool isGeneralScope)
 {
     Ogre::String fname;
-    
     for(unsigned int i = 0;i < filenames.size();i++)
     {
-        if(isGeneralScope)
-            fname = OgitorsUtils::QualifyPath(filenames[i]);
-        else
-            fname = filenames[i];
-
+        fname = OgitorsUtils::QualifyPath(filenames[i]);
         addTemplateFromFile(fname, isGeneralScope);
     }
 }
 //---------------------------------------------------------------------------------
 void OgitorsClipboardManager::addTemplateFromFile(Ogre::String filename, bool isGeneralScope)
 {
-    TiXmlDocument docImport;
-    
-    if(isGeneralScope)
-    {
-        if(!docImport.LoadFile(filename.c_str())) 
-            return;
-    }
-    else
-    {
-        OFS::OfsPtr& mFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
+    TiXmlDocument docImport(filename.c_str());
 
-        unsigned int file_size = 0;
-
-        if(mFile->getFileSize(filename.c_str(), file_size) != OFS::OFS_OK)
-            return;
-
-        char *file_data = new char[file_size + 1];
-
-        OFS::OFSHANDLE fileHandle;
-
-        if(mFile->openFile(fileHandle, filename.c_str(), OFS::OFS_READ) != OFS::OFS_OK)
-        {
-            delete [] file_data;
-            return;
-        }
-
-        mFile->read(fileHandle, file_data, file_size);
-        mFile->closeFile(fileHandle);
-
-        if(!docImport.LoadFromMemory(file_data, file_size))
-        {
-            delete [] file_data;
-            return;
-        }
-
-        delete [] file_data;
-    }
+    if(!docImport.LoadFile()) 
+        return;
 
     TiXmlElement* templates = 0;
     templates = docImport.FirstChildElement("TEMPLATES");

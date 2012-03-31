@@ -31,7 +31,6 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "Ogitors.h"
-#include "ofs.h"
 #include "HydraxWaterEditor.h"
 
 using namespace Ogitors;
@@ -684,8 +683,8 @@ bool CHydraxEditor::_setRemoveDepthTechnique(OgitorsPropertyBase* property, cons
 void CHydraxEditor::_createWaterPlane(Ogre::SceneManager *mSceneMgr, Ogre::Camera *mCamera, Ogre::Viewport *mViewport)
 {
     Ogre::ResourceGroupManager *mngr = Ogre::ResourceGroupManager::getSingletonPtr();
-    Ogre::String value = mOgitorsRoot->GetProjectFile()->getFileSystemName() + "::/" + mOgitorsRoot->GetProjectOptions()->HydraxDirectory + "/";
-    mngr->addResourceLocation(value,"Ofs","Hydrax");
+    Ogre::String value = mOgitorsRoot->GetProjectOptions()->ProjectDir + mOgitorsRoot->GetProjectOptions()->HydraxDirectory;
+    mngr->addResourceLocation(value,"FileSystem","Hydrax");
 
     mHandle = new Hydrax::Hydrax(mSceneMgr, mCamera, mViewport);
 
@@ -831,20 +830,11 @@ void CHydraxEditor::refresh()
 //---------------------------------------------------------------------------------
 void CHydraxEditor::onSave(bool forced)
 {
-    Ogre::String hydraxpath = "/" + mOgitorsRoot->GetProjectOptions()->HydraxDirectory + "/";
+    Ogre::String hydraxpath = mOgitorsRoot->GetProjectOptions()->ProjectDir + mOgitorsRoot->GetProjectOptions()->HydraxDirectory + "/";
     Ogre::ColourValue colOrig = mOriginalWaterColour->get();
     Ogre::Vector3 original = Ogre::Vector3(colOrig.r, colOrig.g, colOrig.b);
     mHandle->setWaterColor(original);
-
-    Ogre::String cfgData;
-    mHandle->saveCfg(cfgData);
-
-    OFS::OfsPtr& mFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-    Ogre::String path =  "/" + OgitorsRoot::getSingletonPtr()->GetProjectOptions()->HydraxDirectory + "/" + mConfigFile->get();
-
-    OFS::OFSHANDLE handle;
-    mFile->createFile(handle, path.c_str(), cfgData.size(), cfgData.size(), cfgData.c_str());
-    mFile->closeFile(handle);
+    mHandle->saveCfg(mConfigFile->get(), hydraxpath);
 }
 //---------------------------------------------------------------------------------
 void CHydraxEditor::_initAndSignalProperties( void )
@@ -973,7 +963,7 @@ bool CHydraxEditor::unLoad()
         delete mHandle;
     }
 
-    mOgitorsRoot->DestroyResourceGroup("Hydrax");
+    Ogre::ResourceGroupManager::getSingletonPtr()->destroyResourceGroup("Hydrax");
 
     mLoaded->set(false);
     return true;
@@ -1055,17 +1045,6 @@ void CHydraxEditor::createProperties(OgitorsPropertyValueMap &params)
 
     mProperties.initValueMap(params);
 }
-//-----------------------------------------------------------------------------------------
-TiXmlElement *CHydraxEditor::exportDotScene(TiXmlElement *pParent)
-{
-    TiXmlElement *pHydrax = pParent->Parent()->InsertEndChild(TiXmlElement("hydrax"))->ToElement();
-    pHydrax->SetAttribute("configFile", mConfigFile->get().c_str());
-    pHydrax->SetAttribute("caelumIntegration", Ogre::StringConverter::toString(mCaelumIntegration->get()).c_str());
-
-    return pHydrax;
-}
-//-----------------------------------------------------------------------------------------
-
 
 //----------------------------------------------------------------------------
 //----HYDRAXEDITORFACTORY-----------------------------------------------------
@@ -1188,22 +1167,22 @@ CBaseEditor *CHydraxEditorFactory::CreateObject(CBaseEditor **parent, OgitorsPro
 {
   OgitorsRoot *ogroot = OgitorsRoot::getSingletonPtr();
   Ogre::ResourceGroupManager *mngr = Ogre::ResourceGroupManager::getSingletonPtr();
-  Ogre::String value = "/" + OgitorsRoot::getSingletonPtr()->GetProjectOptions()->HydraxDirectory;
-  OFS::OfsPtr& mFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-    
+  Ogre::String value = ogroot->GetProjectOptions()->ProjectDir + ogroot->GetProjectOptions()->HydraxDirectory + "/";
+
   CHydraxEditor *object = OGRE_NEW CHydraxEditor(this);
 
   if(params.find("init") != params.end())
   {
-      mFile->createDirectory(value.c_str());   
-      Ogre::String copydir = OgitorsUtils::GetEditorResourcesPath() + "/HYDRAX/";
-      OgitorsUtils::CopyDirOfs(copydir, value + "/");
+    Ogre::String dirname = OgitorsUtils::QualifyPath(value);
+    OgitorsSystem::getSingletonPtr()->MakeDirectory(dirname);
+    Ogre::String copydir = OgitorsUtils::GetEditorResourcesPath() + "/HYDRAX/*";
+    OgitorsSystem::getSingletonPtr()->CopyFilesEx(copydir,dirname);
 
-      OgitorsPropertyValue propValue;
-      propValue.propType = PROP_STRING;
-      propValue.val = Ogre::Any(Ogre::String("Hydrax.hdx"));
-      params["configfile"] = propValue;
-      params.erase(params.find("init"));
+    OgitorsPropertyValue propValue;
+    propValue.propType = PROP_STRING;
+    propValue.val = Ogre::Any(Ogre::String("Hydrax.hdx"));
+    params["configfile"] = propValue;
+    params.erase(params.find("init"));
   }
 
   object->createProperties(params);
@@ -1244,12 +1223,6 @@ bool dllStartPlugin(void *identifier, Ogre::String& name)
 {
     name = "Hydrax Plugin";
     OgitorsRoot::getSingletonPtr()->RegisterEditorFactory(identifier, OGRE_NEW CHydraxEditorFactory());
-    return true;
-}
-//----------------------------------------------------------------------------
-bool dllGetPluginName(Ogre::String& name)
-{
-    name = "Hydrax Plugin";
     return true;
 }
 //----------------------------------------------------------------------------

@@ -5,7 +5,8 @@
         <file>stylesheets/aqua.qss</file>
         <file>stylesheets/obsidian.qss</file>
         <file>stylesheets/KDE4.qss</file>
-        <file>stylesheets/dark.qss</file>
+        <file>stylesheets/osx.qss</file>
+        <file>syntax_highlightning/material.txt</file>
         <file>about/project.html</file>
         <file>about/people.html</file>
         <file>about/license.html</file>
@@ -23,7 +24,6 @@
         <file>icons/cut.svg</file>
         <file>icons/debuginfo.svg</file>
         <file>icons/deform.svg</file>
-        <file>icons/defrag.svg</file>
         <file>icons/downarrow.svg</file>
         <file>icons/editcopy.svg</file>
         <file>icons/editcut.svg</file>
@@ -34,7 +34,6 @@
         <file>icons/error.svg</file>
         <file>icons/exit.svg</file>
         <file>icons/export.svg</file>
-        <file>icons/extract.svg</file>
         <file>icons/filenew.svg</file>
         <file>icons/fileopen.svg</file>
         <file>icons/fileclose.svg</file>
@@ -53,8 +52,6 @@
         <file>icons/messages.svg</file>
         <file>icons/mode_fly.svg</file>
         <file>icons/mode_walk.svg</file>
-        <file>icons/mode_fly_dark_style.svg</file>
-        <file>icons/mode_walk_dark_style.svg</file>
         <file>icons/material.svg</file>
         <file>icons/node.svg</file>
         <file>icons/objects.svg</file>
@@ -63,8 +60,6 @@
         <file>icons/light.png</file>
         <file>icons/orient_obj.svg</file>
         <file>icons/orient_world.svg</file>
-        <file>icons/orient_obj_dark_style.svg</file>
-        <file>icons/orient_world_dark_style.svg</file>
         <file>icons/paint.svg</file>
         <file>icons/pass.svg</file>
         <file>icons/paste.svg</file>
@@ -85,7 +80,6 @@
         <file>icons/rotate.svg</file>
         <file>icons/scale.svg</file>
         <file>icons/scene.svg</file>
-        <file>icons/script.svg</file>
         <file>icons/search.svg</file>
         <file>icons/select.svg</file>
         <file>icons/settings.svg</file>
@@ -107,23 +101,5 @@
         <file>icons/visibility.svg</file>
         <file>icons/visibility_disabled.svg</file>
         <file>icons/warning.svg</file>
-        <file>UI/arrow_down_V2.png</file>
-        <file>UI/arrow_left_V2.png</file>
-        <file>UI/arrow_right_V2.png</file>
-        <file>UI/arrow_up_V2.png</file>
-        <file>UI/checkbox_checked.png</file>
-        <file>UI/checkbox_checked_disabled.png</file>
-        <file>UI/checkbox_unchecked.png</file>
-        <file>UI/checkbox_unchecked_disabled.png</file>
-        <file>UI/dropdown_arrow.png</file>
-        <file>UI/radiobutton_checked.png</file>
-        <file>UI/radiobutton_checked_disabled.png</file>
-        <file>UI/radiobutton_unchecked.png</file>
-        <file>UI/radiobutton_unchecked_disabled.png</file>
-        <file>UI/spinbox_down.png</file>
-        <file>UI/spinbox_up.png</file>
-        <file>UI/treeview_arrow_down.png</file>
-        <file>UI/treeview_arrow_right.png</file>
-        <file>syntax_highlighting/material.txt</file>
     </qresource>
 </RCC>

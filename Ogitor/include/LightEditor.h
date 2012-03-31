@@ -88,7 +88,7 @@ namespace Ogitors
         /** @copydoc CBaseEditor::getWorldAABB() */
         virtual Ogre::AxisAlignedBox getWorldAABB();
         /** @copydoc CBaseEditor::getDerivedPosition() */
-        virtual Ogre::Vector3    getDerivedPosition();
+        virtual Ogre::Vector3     getDerivedPosition();
         /** @copydoc CBaseEditor::getDerivedOrientation() */
         virtual Ogre::Quaternion getDerivedOrientation();
         /** @copydoc CBaseEditor::setDerivedPosition(Ogre::Vector3) */

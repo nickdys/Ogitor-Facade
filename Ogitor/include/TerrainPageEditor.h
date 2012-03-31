@@ -45,6 +45,8 @@ namespace Forests
 
 namespace Ogitors
 {
+#define MAX_LAYERS_ALLOWED 6
+
     class TerrainLayerUndo;
     class TerrainHeightUndo;
     class TerrainBlendUndo;
@@ -152,11 +154,12 @@ namespace Ogitors
         virtual bool                 importBlendMap(int layerID, Ogre::String filename = Ogre::String(""));
         virtual bool                 importBlendMap(Ogre::String filename = Ogre::String(""));
         virtual bool                 exportHeightMap(Ogre::String path = Ogre::String(""), Ogre::String filename = Ogre::String(""), Ogre::Real fMin = 0.0f, Ogre::Real fMax = 0.0f);
-        virtual bool                 exportCompositeMap(Ogre::String path = Ogre::String(""), Ogre::String filename = Ogre::String(""));
 
         float                       *getGrassPointer(unsigned int layerID);
         void                         updateGrassLayer(unsigned int layerID);
         void                         dirtyGrassRect(Ogre::Rect &rect) { mPGDirtyRect = rect; };
+        void                         setMapSize(int value);
+        void                         setWorldSize(Ogre::Real value);
         /**
         * Creates new layer
         * @param texture texture name
@@ -211,9 +214,9 @@ namespace Ogitors
         OgitorsProperty<int>           *mLayerCount;            /** Layer(s) count */
         OgitorsProperty<bool>          *mTempDensityModified;   /** Is the density map modified and has a temporary save file? */
         OgitorsProperty<bool>          *mTempModified;          /** Is the page modified and has a temporary save file? */
-        OgitorsProperty<Ogre::Real>    *mLayerWorldSize[16];
-        OgitorsProperty<Ogre::String>  *mLayerDiffuse[16];
-        OgitorsProperty<Ogre::String>  *mLayerNormal[16];
+        OgitorsProperty<Ogre::Real>    *mLayerWorldSize[MAX_LAYERS_ALLOWED];
+        OgitorsProperty<Ogre::String>  *mLayerDiffuse[MAX_LAYERS_ALLOWED];
+        OgitorsProperty<Ogre::String>  *mLayerNormal[MAX_LAYERS_ALLOWED];
         OgitorsProperty<int>           *mMinBatchSize;
         OgitorsProperty<int>           *mMaxBatchSize;
 
@@ -309,12 +312,7 @@ namespace Ogitors
         bool _setPGGrassTech(OgitorsPropertyBase* property, const int& value);
 
 
-        /**
-        * Modifies the heightfield
-        * @param scale the scale to multiply current heights with
-        * @param offset value to offset current heights with (after scale)
-        */
-        void _modifyHeights(float scale, float offset);
+
         /**
         * Fetches empty layer index (internal)
         * @return empty layer index

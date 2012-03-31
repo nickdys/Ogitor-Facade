@@ -31,7 +31,6 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "Ogitors.h"
-#include "ofs.h"
 #include "SkyxEditor.h"
 
 using namespace Ogitors;
@@ -103,8 +102,8 @@ bool CSkyxEditor::load(bool async)
         return true;
 
     Ogre::ResourceGroupManager *mngr = Ogre::ResourceGroupManager::getSingletonPtr();
-    Ogre::String value = mOgitorsRoot->GetProjectFile()->getFileSystemName() + "::/SkyX/";
-    mngr->addResourceLocation(value,"Ofs","SkyX");
+    Ogre::String value = OgitorsUtils::QualifyPath(mOgitorsRoot->GetProjectOptions()->ProjectDir + "/SkyX");
+    mngr->addResourceLocation(value,"FileSystem","SkyX");
     mngr->initialiseResourceGroup("SkyX");
 
 	// Create SkyX
@@ -134,7 +133,7 @@ bool CSkyxEditor::unLoad()
         delete mHandle;
     }
 
-    mOgitorsRoot->DestroyResourceGroup("SkyX");
+    Ogre::ResourceGroupManager::getSingletonPtr()->destroyResourceGroup("SkyX");
 
     mLoaded->set(false);
     return true;
@@ -309,42 +308,6 @@ bool CSkyxEditor::_setWindDirection(OgitorsPropertyBase* property, const Ogre::R
     return true;
 }
 //-----------------------------------------------------------------------------------------
-TiXmlElement *CSkyxEditor::exportDotScene(TiXmlElement *pParent)
-{
-    TiXmlElement *pSkyX = pParent->Parent()->InsertEndChild(TiXmlElement("skyx"))->ToElement();
-
-    pSkyX->SetAttribute("rayleighMultiplier", Ogre::StringConverter::toString(mRayleighMultiplier->get()).c_str());
-    pSkyX->SetAttribute("mieMultiplier", Ogre::StringConverter::toString(mMieMultiplier->get()).c_str());
-    pSkyX->SetAttribute("exposure", Ogre::StringConverter::toString(mExposure->get()).c_str());
-    pSkyX->SetAttribute("innerRadius", Ogre::StringConverter::toString(mInnerRadius->get()).c_str());
-    pSkyX->SetAttribute("outerRadius", Ogre::StringConverter::toString(mOuterRadius->get()).c_str());
-    pSkyX->SetAttribute("sampleCount", Ogre::StringConverter::toString(mSampleCount->get()).c_str());
-    pSkyX->SetAttribute("height", Ogre::StringConverter::toString(mHeight->get()).c_str());
-    pSkyX->SetAttribute("sunIntensity", Ogre::StringConverter::toString(mSunIntensity->get()).c_str());
-    pSkyX->SetAttribute("G", Ogre::StringConverter::toString(mG->get()).c_str());
-
-    TiXmlElement *pTime = pSkyX->InsertEndChild(TiXmlElement("time"))->ToElement();
-    pTime->SetAttribute("multiplier", Ogre::StringConverter::toString(mTimeMultiplier->get()).c_str());
-    pTime->SetAttribute("current", Ogre::StringConverter::toString(mTime->get().x).c_str());
-    pTime->SetAttribute("sunRise", Ogre::StringConverter::toString(mTime->get().y).c_str());
-    pTime->SetAttribute("sunSet",  Ogre::StringConverter::toString(mTime->get().z).c_str());
-    
-    TiXmlElement *pEastPosition = pSkyX->InsertEndChild(TiXmlElement("eastPosition"))->ToElement();
-    pEastPosition->SetAttribute("X", Ogre::StringConverter::toString(mEastPosition->get().x).c_str());
-    pEastPosition->SetAttribute("Y", Ogre::StringConverter::toString(mEastPosition->get().y).c_str());
-
-    TiXmlElement *pWaveLength = pSkyX->InsertEndChild(TiXmlElement("waveLength"))->ToElement();
-    pWaveLength->SetAttribute("R", Ogre::StringConverter::toString(mWaveLength->get().x).c_str());
-    pWaveLength->SetAttribute("G", Ogre::StringConverter::toString(mWaveLength->get().y).c_str());
-    pWaveLength->SetAttribute("B", Ogre::StringConverter::toString(mWaveLength->get().z).c_str());
-
-    TiXmlElement *pvClouds = pSkyX->InsertEndChild(TiXmlElement("vClouds"))->ToElement();
-    pvClouds->SetAttribute("windSpeed", Ogre::StringConverter::toString(mWindSpeed->get()).c_str());
-    pvClouds->SetAttribute("windDirection", Ogre::StringConverter::toString(mWindDirection->get()).c_str());
-    pvClouds->SetAttribute("noiseScale", Ogre::StringConverter::toString(mNoiseScale->get()).c_str());
-
-    return pSkyX;
-}
 
 //----------------------------------------------------------------------------
 //----HYDRAXEDITORFACTORY-----------------------------------------------------
@@ -399,18 +362,18 @@ CBaseEditor *CSkyxEditorFactory::CreateObject(CBaseEditor **parent, OgitorsPrope
 {
   OgitorsRoot *ogroot = OgitorsRoot::getSingletonPtr();
   Ogre::ResourceGroupManager *mngr = Ogre::ResourceGroupManager::getSingletonPtr();
-  Ogre::String value = "/SkyX";
-  OFS::OfsPtr& mFile = OgitorsRoot::getSingletonPtr()->GetProjectFile();
-    
+  Ogre::String value = ogroot->GetProjectOptions()->ProjectDir + "/SkyX/";
+
   CSkyxEditor *object = OGRE_NEW CSkyxEditor(this);
 
   if(params.find("init") != params.end())
   {
-      mFile->createDirectory(value.c_str());   
-      Ogre::String copydir = OgitorsUtils::GetEditorResourcesPath() + "/SKYX/";
-      OgitorsUtils::CopyDirOfs(copydir, value + "/");
+    Ogre::String dirname = OgitorsUtils::QualifyPath(value);
+    OgitorsSystem::getSingletonPtr()->MakeDirectory(dirname);
+    Ogre::String copydir = OgitorsUtils::GetEditorResourcesPath() + "/SKYX/*";
+    OgitorsSystem::getSingletonPtr()->CopyFilesEx(copydir,dirname);
 
-      params.erase(params.find("init"));
+    params.erase(params.find("init"));
   }
 
   object->createProperties(params);
@@ -440,12 +403,6 @@ bool dllStartPlugin(void *identifier, Ogre::String& name)
 {
     name = "Skyx Plugin";
     OgitorsRoot::getSingletonPtr()->RegisterEditorFactory(identifier, OGRE_NEW CSkyxEditorFactory());
-    return true;
-}
-//----------------------------------------------------------------------------
-bool dllGetPluginName(Ogre::String& name)
-{
-    name = "Skyx Plugin";
     return true;
 }
 //----------------------------------------------------------------------------

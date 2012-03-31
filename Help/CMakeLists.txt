@@ -1,46 +1,29 @@
 
 #execute_process(
-#  COMMAND	%QTDIR%/bin/qhelpgenerator ogitor.qhp -o ogitor.qch
+#  COMMAND  %QTDIR%/bin/qhelpgenerator ogitor.qhp -o ogitor.qch
 #  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Help)
 #execute_process(
-#  COMMAND	%QTDIR%/bin/qcollectiongenerator collection_ogitor.qhcp -o collection_ogitor.qhc
+#  COMMAND  %QTDIR%/bin/qcollectiongenerator collection_ogitor.qhcp -o collection_ogitor.qhc
 #  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Help)
 
 if(WIN32)
-    execute_process(
-        COMMAND  %QTDIR%/bin/qhelpgenerator ogitor.qhp -o ogitor.qch
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Help)
+install(FILES
+  collection_ogitor.qhc
+  ogitor.qch
+  DESTINATION bin/Help
+  CONFIGURATIONS Debug)
 
-    execute_process(
-        COMMAND  %QTDIR%/bin/qcollectiongenerator collection_ogitor.qhcp -o collection_ogitor.qhc
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Help)
-
-    install(FILES
-        collection_ogitor.qhc
-        ogitor.qch
-        DESTINATION bin/Help
-        CONFIGURATIONS Debug)
-
-    install(FILES
-        collection_ogitor.qhc
-        ogitor.qch
-        DESTINATION bin/Help
-        CONFIGURATIONS Release RelWithDebInfo MinSizeRel)
+install(FILES
+  collection_ogitor.qhc
+  ogitor.qch
+  DESTINATION bin/Help
+  CONFIGURATIONS Release RelWithDebInfo MinSizeRel)
+  
 endif(WIN32)
 
-if(UNIX AND NOT APPLE)
-    execute_process(
-        COMMAND  qhelpgenerator ogitor.qhp -o ogitor.qch
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Help)
-
-    execute_process(
-        COMMAND  qcollectiongenerator collection_ogitor.qhcp -o collection_ogitor.qhc
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Help)
-
-    install(FILES
-        collection_ogitor.qhc
-        ogitor.qch
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/qtOgitor/Help)
-endif(UNIX AND NOT APPLE)
-
-# vim: set sw=2 ts=2 noet:
+if(UNIX)
+install(FILES
+    collection_ogitor.qhc
+    ogitor.qch
+    DESTINATION bin/Help)
+endif(UNIX)

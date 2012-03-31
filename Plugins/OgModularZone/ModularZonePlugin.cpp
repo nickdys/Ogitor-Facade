@@ -16,7 +16,6 @@
 //Place - Suite 330, Boston, MA 02111-1307, USA, or go to
 //http://www.gnu.org/copyleft/lesser.txt.
 ////////////////////////////////////////////////////////////////////////////////*/
-
 #include "Ogitors.h"
 #include "ModularZoneToolbar.hxx"
 #include "ModularZoneFactory.h"
@@ -27,38 +26,33 @@
 using namespace Ogitors;
 using namespace MZP;
 
+
+
 //----------------------------------------------------------------------------
 bool dllStartPlugin(void *identifier, Ogre::String& name)
 {
-    name = "Modular Zone Plugin";
 
-    ModularZoneFactory* zonefactory = OGRE_NEW ModularZoneFactory();
-    PortalFactory* portalfactory = OGRE_NEW PortalFactory();
-    ModularZoneToolbar* toolbar = new ModularZoneToolbar();
-    ZoneListWidget* widget = new ZoneListWidget();
-    zonefactory->setZoneListWidget(widget);
 
-    Ogitors::DockWidgetData data;
-    data.mCaption = "Modular Zones";
+	ModularZoneFactory* zonefactory = OGRE_NEW ModularZoneFactory();
+	PortalFactory* portalfactory = OGRE_NEW PortalFactory();
+	ModularZoneToolbar* toolbar = new ModularZoneToolbar();
+	ZoneListWidget* widget = new ZoneListWidget();
+	zonefactory->setZoneListWidget(widget);
+
+	Ogitors::DockWidgetData data;
+	data.mCaption = "Modular Zones";
     data.mHandle = widget;
-#if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
-    data.mIcon = "/usr/share/qtOgitor/Plugins/Icons/zone.svg";//"Icons/zone.svg";
-#else
-    data.mIcon = "../Plugins/Icons/zone.svg";//"Icons/zone.svg";
-#endif
+    data.mIcon = "../Plugins/Icons/zone.svg";
     data.mParent = DOCK_RESOURCES;
+	   
 
-    OgitorsRoot::getSingletonPtr()->RegisterEditorFactory(identifier, zonefactory);
-    OgitorsRoot::getSingletonPtr()->RegisterEditorFactory(identifier, portalfactory);
-    OgitorsRoot::getSingletonPtr()->RegisterToolBar(identifier,toolbar->getToolbar());
-    OgitorsRoot::getSingletonPtr()->RegisterDockWidget(identifier,data);
-
-    return true;
-}
-//----------------------------------------------------------------------------
-bool dllGetPluginName(Ogre::String& name)
-{
     name = "Modular Zone Plugin";
+
+	OgitorsRoot::getSingletonPtr()->RegisterEditorFactory(identifier, zonefactory);
+	OgitorsRoot::getSingletonPtr()->RegisterEditorFactory(identifier, portalfactory);
+	OgitorsRoot::getSingletonPtr()->RegisterToolBar(identifier,toolbar->getToolbar());
+	OgitorsRoot::getSingletonPtr()->RegisterDockWidget(identifier,data);
+
     return true;
 }
 //----------------------------------------------------------------------------

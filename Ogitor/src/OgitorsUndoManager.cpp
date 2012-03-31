@@ -30,6 +30,7 @@
 /// THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////*/
 
+#pragma once
 #include "tinyxml.h"
 #include "OgitorsPrerequisites.h"
 #include "OgitorsRoot.h"
@@ -240,8 +241,8 @@ void OgitorsUndoManager::Clear()
     std::string desc = "";
     UndoManagerNotificationEvent evt1(0, false, desc);
     UndoManagerNotificationEvent evt2(1, false, desc);
-    EventManager::getSingletonPtr()->sendEvent(this, 0, &evt1);
-    EventManager::getSingletonPtr()->sendEvent(this, 0, &evt2);
+    EventManager::Instance()->sendEvent(this, 0, &evt1);
+    EventManager::Instance()->sendEvent(this, 0, &evt2);
 }
 //----------------------------------------------------------------------------------
 void OgitorsUndoManager::AddUndo(OgitorsUndoBase *undo)
@@ -267,7 +268,7 @@ void OgitorsUndoManager::AddUndo(OgitorsUndoBase *undo)
 		std::string desc=undo->getDescription();
 
         UndoManagerNotificationEvent evt(0, true, desc);
-        EventManager::getSingletonPtr()->sendEvent(this, 0, &evt);
+        EventManager::Instance()->sendEvent(this, 0, &evt);
     }
 }
 //----------------------------------------------------------------------------------
@@ -285,7 +286,7 @@ void OgitorsUndoManager::Undo()
 
     std::string desc = GetUndoString();
     UndoManagerNotificationEvent evt(0, CanUndo(), desc);
-    EventManager::getSingletonPtr()->sendEvent(this, 0, &evt);
+    EventManager::Instance()->sendEvent(this, 0, &evt);
 }
 //----------------------------------------------------------------------------------
 void OgitorsUndoManager::Redo()
@@ -301,7 +302,7 @@ void OgitorsUndoManager::Redo()
 
     std::string desc = GetRedoString();
     UndoManagerNotificationEvent evt(1, CanRedo(), desc);
-    EventManager::getSingletonPtr()->sendEvent(this, 0, &evt);
+    EventManager::Instance()->sendEvent(this, 0, &evt);
 }
 //----------------------------------------------------------------------------------
 void OgitorsUndoManager::BeginCollection(const Ogre::String& desc)

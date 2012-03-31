@@ -38,7 +38,6 @@
 #include "CameraEditor.h"
 #include "ViewportEditor.h"
 #include "tinyxml.h"
-#include "ofs.h"
 
 using namespace Ogitors;
 
@@ -273,7 +272,7 @@ bool CSceneManagerEditor::setNameImpl(Ogre::String name)
     if(mSystem->DisplayMessageDialog(OTR("Renaming a Scene Manager requires Save and Reload of the Scene.\nDo you want to continue?"),DLGTYPE_YESNO) == DLGRET_YES)
     {
         mOgitorsRoot->SaveScene();
-        Ogre::String filename = mOgitorsRoot->GetProjectFile()->getFileSystemName();
+        Ogre::String filename = mOgitorsRoot->GetProjectOptions()->ProjectDir + mOgitorsRoot->GetProjectOptions()->ProjectName + ".ogscene";
         mOgitorsRoot->TerminateScene();
         mOgitorsRoot->LoadScene(filename);
         return true;
@@ -580,7 +579,7 @@ TiXmlElement* CSceneManagerEditor::exportDotScene(TiXmlElement *pParent)
         pSkydome->SetAttribute("material", mSkyDomeMaterial->get().c_str());
     }
 
-    Ogre::String fogModes[] = {"none", "exp", "exp2", "linear", "GUARD"};
+    Ogre::String fogModes[] = {"none", "linear", "exp", "exp2","GUARD"};
     TiXmlElement *pFog = pParent->InsertEndChild(TiXmlElement("fog"))->ToElement();
     pFog->SetAttribute("mode", fogModes[mFogMode->get()].c_str());
     pFog->SetAttribute("start", Ogre::StringConverter::toString(mFogStart->get()).c_str());

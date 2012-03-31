@@ -5,7 +5,7 @@
 # and provide build configuration options.
 ######################################################################
 
-cmake_minimum_required(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 # Works around warnings libraries linked against that don't
 # have absolute paths (e.g. -lOgreMain)
@@ -17,30 +17,16 @@ cmake_policy(SET CMP0005 NEW)
 
 project(Ogitor)
 
-set(OGITOR_VERSION_STRING "0.5.4")
-set(OGITOR_VERSION_STRING_MAJOR "0")
-set(OGITOR_VERSION_STRING_MINOR "5")
-set(OGITOR_VERSION_STRING_PATCH "4")
-
-set(abi_version ${OGITOR_VERSION_STRING})
-
-if(UNIX AND NOT APPLE)
-    set(CMAKE_INSTALL_PREFIX "/usr")
-endif(UNIX AND NOT APPLE)
-
-if(NOT UNIX)
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/RunPath")
-endif(NOT UNIX)
+set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/RunPath")
 
 option(OGITOR_DIST "Ogitor Installer Installation" FALSE)
 
-option(OGITOR_MESHMAGICK_INTERFACE "Use MeshMagick widget" FALSE)
+option(OGITOR_EXPERIMENTAL_INTERFACE "Use experimental irrelevant stuff" FALSE)
 
 set(OGITOR_PREPROCESSOR "OGITOR_EXPORT")
 
 set(OGITOR_QT_PREPROCESSOR "")
 
-set(PLUGINS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/RunPath/Plugins/") # Plugin output directories for the facade plugins
 
 # Find Boost
 # Prefer static linking in all cases
@@ -51,7 +37,7 @@ if (NOT OGRE_BUILD_PLATFORM_IPHONE)
 		# Statically linking boost to a dynamic Ogre build doesn't work on Linux 64bit
 		set(Boost_USE_STATIC_LIBS ${OGRE_STATIC})
 	endif ()
-	set(Boost_ADDITIONAL_VERSIONS "1.38.0" "1.38" "1.39.0" "1.39" "1.40.0" "1.40" "1.44.0" "1.44" "1.45" "1.46" "1.49" "1.49.0")
+	set(Boost_ADDITIONAL_VERSIONS "1.38.0" "1.38" "1.39.0" "1.39" "1.40.0" "1.40" "1.44.0" "1.44")
 	# Components that need linking (NB does not include header-only components like bind)
 	set(OGRE_BOOST_COMPONENTS thread date_time regex)
 	find_package(Boost COMPONENTS ${OGRE_BOOST_COMPONENTS} QUIET)
@@ -64,60 +50,41 @@ if (NOT OGRE_BUILD_PLATFORM_IPHONE)
 endif(NOT OGRE_BUILD_PLATFORM_IPHONE)
 
 # Somehow, relative paths doesn't work on Linux when installing files..
-if(UNIX)
-	set(PREFIX ${CMAKE_INSTALL_PREFIX})
-else()
-	set(PREFIX "./")
-endif()
+IF(UNIX)
+	SET(PREFIX ${CMAKE_INSTALL_PREFIX})
+ELSE()
+	SET(PREFIX "./")
+ENDIF()
 
 set(OGITOR_WORK_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-if(CMAKE_BUILD_TYPE STREQUAL "")
-	# CMake defaults to leaving CMAKE_BUILD_TYPE empty. This screws up
-	# differentiation between debug and release builds.
-	set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: None (CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
+if (CMAKE_BUILD_TYPE STREQUAL "")
+  # CMake defaults to leaving CMAKE_BUILD_TYPE empty. This screws up
+  # differentiation between debug and release builds.
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: None (CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif ()
-
-if(WIN32)
-  set(CMAKE_DEBUG_POSTFIX "_d")
-endif(WIN32)
+SET(CMAKE_DEBUG_POSTFIX "_d")
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/;${CMAKE_MODULE_PATH}")
 
-#if(UNIX)
-# set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-# set(CMAKE_INSTALL_RPATH ../lib ../Plugins)
-#endif(UNIX)
+#IF(UNIX)
+#   SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+#   SET(CMAKE_INSTALL_RPATH ../lib ../Plugins)
+#ENDIF(UNIX)
 
 find_package(OGRE REQUIRED)
-find_package(Threads)
 
 if(APPLE)
-	find_package(CG REQUIRED)
+    find_package(CG REQUIRED)
 endif(APPLE)
 
-if((NOT "${OGRE_VERSION_NAME}" STREQUAL "Byatis") AND (NOT "${OGRE_VERSION_NAME}" STREQUAL "Ghadamon"))
-	message(SEND_ERROR "You need Ogre 1.8 Byatis or later to build this.")
-endif()
+IF ((NOT "${OGRE_VERSION_NAME}" STREQUAL "Cthugha") AND (NOT  "${OGRE_VERSION_NAME}" STREQUAL "Byatis"))
+  MESSAGE(SEND_ERROR "You need Ogre 1.7 Cthugha or 1.8.0 Byatis to build this.")
+ENDIF()
 
 if(UNIX)
-	get_filename_component(OGRE_PLUGIN_DIR_LINUX ${OGRE_Plugin_OctreeSceneManager_LIBRARY_REL} PATH)
-	set (OGRE_PLUGIN_DIR_LINUX ${OGRE_PLUGIN_DIR_LINUX} CACHE STRING "Ogre plugin dir (release)")
-endif(UNIX)
-
-include(CheckTypeSize)
-CHECK_TYPE_SIZE("void*" OGITOR_PTR_SIZE BUILTIN_TYPES_ONLY)
-if (OGITOR_PTR_SIZE EQUAL 8)
-  set(OGITOR_PLATFORM_X64 TRUE)
-else ()
-  set(OGITOR_PLATFORM_X64 FALSE)
-endif ()
-
-if(UNIX)
-  # Fix x64 issues on Linux
-  if(OGITOR_PLATFORM_X64 AND NOT APPLE)
-    add_definitions(-fPIC)
-  endif()
+    get_filename_component(OGRE_PLUGIN_DIR_LINUX ${OGRE_Plugin_OctreeSceneManager_LIBRARY_REL} PATH)
+    set (OGRE_PLUGIN_DIR_LINUX ${OGRE_PLUGIN_DIR_LINUX} CACHE STRING "Ogre plugin dir (release)")
 endif(UNIX)
 
 include_directories(${OGRE_INCLUDE_DIRS})
@@ -126,50 +93,27 @@ include_directories(${Boost_INCLUDE_DIR})
 #library_directories(${Boost_LIBRARY_DIR})
 
 # Ogitor
-set(OGITOR_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Ogitor/include")
-set(OGITOR_LIBPATH	"${CMAKE_CURRENT_SOURCE_DIR}/Ogitor/lib")
+SET(OGITOR_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Ogitor/include")
+SET(OGITOR_LIBPATH  "${CMAKE_CURRENT_SOURCE_DIR}/Ogitor/lib")
 
 # Dependencies
-set(DEPENDENCIES_INCLUDES
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/log4cplus/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/PagedGeometry/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Caelum-0.5.0/main/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/HYDRAX/Hydrax/src/Hydrax"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/SkyX"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/MeshMagick/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Angelscript/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lua/src"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Angelscript/add_on/autowrapper"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Angelscript/add_on/scriptbuilder"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Angelscript/add_on/scriptstdstring"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Angelscript/add_on/scriptmath"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Angelscript/add_on/scriptarray"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Angelscript/add_on/quaternion"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Angelscript/add_on/vector3"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/Angelscript/add_on/debugger"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/OFS/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/GenericTextEditor/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/GenericImageEditor/include"
-)
-set(DEPENDENCIES_LIBPATH "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lib")
+SET(DEPENDENCIES_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/include")
+SET(DEPENDENCIES_LIBPATH "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lib")
 
 # Resources (Only used by OSX)
-set(MAC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Mac")
-set(RUNPATH "${CMAKE_CURRENT_SOURCE_DIR}/RunPath")
+SET(MAC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Mac")
+SET(RUNPATH "${CMAKE_CURRENT_SOURCE_DIR}/RunPath")
 
-#set_target_properties(ALL_BUILD PROPERTIES SOLUTION_FOLDER CMake)
-#set_target_properties(ZERO_CHECK PROPERTIES SOLUTION_FOLDER CMake)
-#set_target_properties(INSTALL PROPERTIES SOLUTION_FOLDER CMake)
-#set_target_properties(PACKAGE PROPERTIES SOLUTION_FOLDER CMake)
+#set_target_properties(ALL_BUILD PROPERTIES SOLUTION_FOLDER CMake) 
+#set_target_properties(ZERO_CHECK PROPERTIES SOLUTION_FOLDER CMake) 
+#set_target_properties(INSTALL PROPERTIES SOLUTION_FOLDER CMake) 
+#set_target_properties(PACKAGE PROPERTIES SOLUTION_FOLDER CMake) 
 
 # Fix the plugins configuration file for Linux
 if(UNIX)
-    set(DBG_POSTFIX "")
-#    if(OGRE_LIBRARY_DBG)
-#        set(DBG_POSTFIX "_d")
-#    endif()
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/Templates/plugins.cfg.in ${OGITOR_WORK_DIR}/RunPath/bin/plugins.cfg)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/Templates/resources.cfg.in ${OGITOR_WORK_DIR}/RunPath/bin/resources.cfg)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/Templates/plugins.cfg.in ${OGITOR_WORK_DIR}/RunPath/bin/plugins.cfg)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/Templates/plugins.cfg.in ${OGITOR_WORK_DIR}/RunPath/plugins.cfg.backup_copy)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/Templates/ogitor.desktop.in ${OGITOR_WORK_DIR}/RunPath/bin/qtOgitor.desktop)
 endif(UNIX)
 
 file(MAKE_DIRECTORY ${OGITOR_WORK_DIR}/RunPath/Plugins/debug)
@@ -178,19 +122,13 @@ file(MAKE_DIRECTORY ${OGITOR_WORK_DIR}/RunPath/bin)
 add_subdirectory(Ogitor)
 
 # Setup Dependencies
-add_subdirectory(Dependencies/log4cplus)
 add_subdirectory(Dependencies/HYDRAX/Hydrax/src/Hydrax)
 add_subdirectory(Dependencies/Caelum-0.5.0/main)
 add_subdirectory(Dependencies/PagedGeometry)
-add_subdirectory(Dependencies/Angelscript)
-add_subdirectory(Dependencies/lua)
 add_subdirectory(Dependencies/SkyX)
-add_subdirectory(Dependencies/OFS)
-add_subdirectory(Dependencies/GenericTextEditor)
-add_subdirectory(Dependencies/GenericImageEditor)
-IF(OGITOR_MESHMAGICK_INTERFACE)
-	add_subdirectory(Dependencies/MeshMagick)
-ENDIF(OGITOR_MESHMAGICK_INTERFACE)
+IF(OGITOR_EXPERIMENTAL_INTERFACE)
+add_subdirectory(Dependencies/MeshMagick)
+ENDIF(OGITOR_EXPERIMENTAL_INTERFACE)
 
 
 # plugins
@@ -199,67 +137,50 @@ add_subdirectory(Plugins/OgHydrax)
 add_subdirectory(Plugins/OgSkyx)
 add_subdirectory(Plugins/DotSceneSerializer)
 add_subdirectory(Plugins/OgModularZone)
-add_subdirectory(Plugins/OgMaterialEditor)
-add_subdirectory(Plugins/OgAngelScript)
-add_subdirectory(Plugins/OgScriptEditor)
-add_subdirectory(Plugins/OgAngelDialogManager)
-
-add_subdirectory(Ogitor-Facade-Plugins)
-
-add_subdirectory(OgreOfsPlugin)
 
 add_subdirectory(qtOgitor/qtpropertybrowser-2.5)
 
 add_subdirectory(qtOgitor)
 
-add_subdirectory(qtOfs)
-
 add_subdirectory(SceneLoader)
 
 add_subdirectory(RunPath)
 
-#add_subdirectory(Help)
+add_subdirectory(Help)
 
-add_custom_target(lupdate
-	COMMAND ${PROJECT_SOURCE_DIR}/gen-qt-projectfile ${PROJECT_SOURCE_DIR} > ${PROJECT_SOURCE_DIR}/qtOgitor/languages/translate.pro
-	COMMAND lupdate -noobsolete ${PROJECT_SOURCE_DIR}/qtOgitor/languages/translate.pro
-	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/qtOgitor/languages
-)
+IF(WIN32)
+install(FILES ${OGRE_PLUGIN_DIR_REL}/OgreMain.dll
+    ${OGRE_PLUGIN_DIR_REL}/RenderSystem_Direct3D9.dll
+	${OGRE_PLUGIN_DIR_REL}/RenderSystem_GL.dll
+	${OGRE_PLUGIN_DIR_REL}/Plugin_OctreeSceneManager.dll
+	${OGRE_PLUGIN_DIR_REL}/cg.dll
+	${OGRE_PLUGIN_DIR_REL}/Plugin_CgProgramManager.dll
+	${OGRE_PLUGIN_DIR_REL}/Plugin_ParticleFX.dll
+	${OGRE_PLUGIN_DIR_REL}/OgreTerrain.dll
+	${OGRE_PLUGIN_DIR_REL}/OgrePaging.dll
+    DESTINATION bin
+	CONFIGURATIONS Release)
 
-
-if(WIN32)
-	install(FILES ${OGRE_PLUGIN_DIR_REL}/OgreMain.dll
-		${OGRE_PLUGIN_DIR_REL}/RenderSystem_Direct3D9.dll
-		${OGRE_PLUGIN_DIR_REL}/RenderSystem_GL.dll
-		${OGRE_PLUGIN_DIR_REL}/Plugin_OctreeSceneManager.dll
-		${OGRE_PLUGIN_DIR_REL}/cg.dll
-		${OGRE_PLUGIN_DIR_REL}/Plugin_CgProgramManager.dll
-		${OGRE_PLUGIN_DIR_REL}/Plugin_ParticleFX.dll
-		${OGRE_PLUGIN_DIR_REL}/OgreTerrain.dll
-		${OGRE_PLUGIN_DIR_REL}/OgrePaging.dll
-		DESTINATION bin
-		CONFIGURATIONS Release)
-
-	install(FILES ${OGRE_PLUGIN_DIR_DBG}/OgreMain_d.dll
-		${OGRE_PLUGIN_DIR_DBG}/RenderSystem_Direct3D9_d.dll
-		${OGRE_PLUGIN_DIR_DBG}/RenderSystem_GL_d.dll
-		${OGRE_PLUGIN_DIR_DBG}/Plugin_OctreeSceneManager_d.dll
-		${OGRE_PLUGIN_DIR_DBG}/cg.dll
-		${OGRE_PLUGIN_DIR_DBG}/Plugin_CgProgramManager_d.dll
-		${OGRE_PLUGIN_DIR_DBG}/Plugin_ParticleFX_d.dll
-		${OGRE_PLUGIN_DIR_DBG}/OgreTerrain_d.dll
-		${OGRE_PLUGIN_DIR_DBG}/OgrePaging_d.dll
-		#${OGRE_PLUGIN_DIR_DBG}/OgreMain_d.pdb
-		#${OGRE_PLUGIN_DIR_DBG}/RenderSystem_Direct3D9_d.pdb
-		#${OGRE_PLUGIN_DIR_DBG}/RenderSystem_GL_d.pdb
-		#${OGRE_PLUGIN_DIR_DBG}/Plugin_OctreeSceneManager_d.pdb
-		#${OGRE_PLUGIN_DIR_DBG}/Plugin_CgProgramManager_d.pdb
-		#${OGRE_PLUGIN_DIR_DBG}/Plugin_BSPSceneManager_d.pdb
-		#${OGRE_PLUGIN_DIR_DBG}/Plugin_ParticleFX_d.pdb
-		#${OGRE_PLUGIN_DIR_DBG}/OgreTerrain_d.pdb
-		#${OGRE_PLUGIN_DIR_DBG}/OgrePaging_d.pdb
-		DESTINATION bin
-		CONFIGURATIONS Debug)
+install(FILES ${OGRE_PLUGIN_DIR_DBG}/OgreMain_d.dll
+	${OGRE_PLUGIN_DIR_DBG}/RenderSystem_Direct3D9_d.dll
+	${OGRE_PLUGIN_DIR_DBG}/RenderSystem_GL_d.dll
+	${OGRE_PLUGIN_DIR_DBG}/Plugin_OctreeSceneManager_d.dll
+	${OGRE_PLUGIN_DIR_DBG}/cg.dll
+	${OGRE_PLUGIN_DIR_DBG}/Plugin_CgProgramManager_d.dll
+	${OGRE_PLUGIN_DIR_DBG}/Plugin_ParticleFX_d.dll
+	${OGRE_PLUGIN_DIR_DBG}/OgreTerrain_d.dll
+	${OGRE_PLUGIN_DIR_DBG}/OgrePaging_d.dll
+	#${OGRE_PLUGIN_DIR_DBG}/OgreMain_d.pdb
+	#${OGRE_PLUGIN_DIR_DBG}/RenderSystem_Direct3D9_d.pdb
+	#${OGRE_PLUGIN_DIR_DBG}/RenderSystem_GL_d.pdb
+    #${OGRE_PLUGIN_DIR_DBG}/Plugin_OctreeSceneManager_d.pdb
+	#${OGRE_PLUGIN_DIR_DBG}/Plugin_CgProgramManager_d.pdb
+	#${OGRE_PLUGIN_DIR_DBG}/Plugin_BSPSceneManager_d.pdb
+	#${OGRE_PLUGIN_DIR_DBG}/Plugin_ParticleFX_d.pdb
+	#${OGRE_PLUGIN_DIR_DBG}/OgreTerrain_d.pdb
+	#${OGRE_PLUGIN_DIR_DBG}/OgrePaging_d.pdb
+	DESTINATION bin
+	CONFIGURATIONS Debug)
 
 IF(OGITOR_DIST)
     install(FILES redist/dxwebsetup.exe
@@ -271,52 +192,43 @@ IF(OGITOR_DIST)
         CONFIGURATIONS Release)
 ENDIF(OGITOR_DIST)
 
-endif(WIN32)
-
-# uninstall target
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-    IMMEDIATE @ONLY)
-
-add_custom_target(uninstall
-    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+ENDIF(WIN32)
 
 # no package support for Linux or Mac, yet.
-if(WIN32 AND NOT UNIX)
+IF(WIN32 AND NOT UNIX)
 
-	#include (InstallRequiredSystemLibraries)
+    #include (InstallRequiredSystemLibraries)
 
 	set(CPACK_INSTALL_CMAKE_PROJECTS "${OGITOR_WORK_DIR};Ogitor;ALL;/")
 	set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ogre Editing Framework")
-	set(CPACK_PACKAGE_INSTALL_DIRECTORY "Ogitor_${CPACK_PACKAGE_VERSION}")
-	set(CPACK_PACKAGE_NAME "Ogitor_${CPACK_PACKAGE_VERSION}")
+	set(CPACK_PACKAGE_INSTALL_DIRECTORY "Ogitor")
+	set(CPACK_PACKAGE_NAME "Ogitor")
 	set(CPACK_PACKAGE_VENDOR "The Ogitor Team")
-	set(CPACK_PACKAGE_VERSION ${OGITOR_VERSION_STRING})
-	set(CPACK_PACKAGE_VERSION_MAJOR ${OGITOR_VERSION_STRING_MAJOR})
-	set(CPACK_PACKAGE_VERSION_MINOR ${OGITOR_VERSION_STRING_MINOR})
-	set(CPACK_PACKAGE_VERSION_PATCH ${OGITOR_VERSION_STRING_PATCH})
+	set(CPACK_PACKAGE_VERSION "0.4.4")
+	set(CPACK_PACKAGE_VERSION_MAJOR "0")
+	set(CPACK_PACKAGE_VERSION_MINOR "4")
+	set(CPACK_PACKAGE_VERSION_PATCH "4")
 
 	set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
 	set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}\\\\Resources\\\\OgitorInstall.bmp")
-	set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\qtOgitor.exe")
-	set(CPACK_PACKAGE_EXECUTABLES "qtOgitor" "qtOgitor")
-	set(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortCut \\\"$DESKTOP\\\\qtOgitor.lnk\\\" \\\"$INSTDIR\\\\bin\\\\qtOgitor.exe\\\"")
-
-	# Use custom version of NSIS.InstallOptions.ini
+    SET(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\qtOgitor.exe")
+	SET(CPACK_PACKAGE_EXECUTABLES "qtOgitor" "qtOgitor")
+    SET(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortCut \\\"$DESKTOP\\\\qtOgitor.lnk\\\" \\\"$INSTDIR\\\\bin\\\\qtOgitor.exe\\\"")
+	
+    # Use custom version of NSIS.InstallOptions.ini
 	set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/packaging" ${CMAKE_MODULE_PATH})
 
-	# File types association:
-	set(CPACK_NSIS_DEFINES "!include ${PROJECT_SOURCE_DIR}/CMakeModules\\\\packaging\\\\FileAssociation.nsh")
-
+    # File types association:
+    SET(CPACK_NSIS_DEFINES "!include ${PROJECT_SOURCE_DIR}/CMakeModules\\\\packaging\\\\FileAssociation.nsh")
+	
 	getenv_path(USERPROFILE)
 
-	set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
-	ExecWait '$SYSDIR\\\\cmd.exe /Q /C xcopy \\\"$INSTDIR\\\\Projects\\\\SampleDotScene\\\" \\\"$PROFILE\\\\OgitorProjects\\\\SampleDotScene\\\\\\\" /E /Y'
-	ExecWait '$SYSDIR\\\\cmd.exe /Q /C xcopy \\\"$INSTDIR\\\\Media\\\" \\\"$PROFILE\\\\OgitorProjects\\\\Media\\\\\\\" /E /Y'
-	CreateDirectory \\\"$PROFILE\\\\OgitorProjects\\\\bin\\\"
-	CopyFiles \\\"$INSTDIR\\\\bin\\\\SampleLoadApp.exe\\\" \\\"$PROFILE\\\\OgitorProjects\\\\bin\\\"
-	CopyFiles \\\"$INSTDIR\\\\bin\\\\SampleAppConfig_dist.xml\\\" \\\"$PROFILE\\\\OgitorProjects\\\\bin\\\\SampleAppConfig.xml\\\"
+	SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
+		ExecWait '$SYSDIR\\\\cmd.exe /Q /C xcopy \\\"$INSTDIR\\\\Projects\\\\SampleScene3\\\" \\\"$PROFILE\\\\OgitorProjects\\\\SampleScene\\\\\\\" /E /Y'
+		ExecWait '$SYSDIR\\\\cmd.exe /Q /C xcopy \\\"$INSTDIR\\\\Media\\\" \\\"$PROFILE\\\\OgitorProjects\\\\Media\\\\\\\" /E /Y'
+		CreateDirectory \\\"$PROFILE\\\\OgitorProjects\\\\bin\\\"
+		CopyFiles \\\"$INSTDIR\\\\bin\\\\SampleLoadApp.exe\\\" \\\"$PROFILE\\\\OgitorProjects\\\\bin\\\"
+		CopyFiles \\\"$INSTDIR\\\\bin\\\\SampleAppConfig_dist.xml\\\" \\\"$PROFILE\\\\OgitorProjects\\\\bin\\\\SampleAppConfig.xml\\\"
 		ExecWait '$SYSDIR\\\\cmd.exe /Q /C xcopy \\\"$INSTDIR\\\\SampleApp_Source\\\" \\\"$PROFILE\\\\OgitorProjects\\\\SampleApp_Source\\\\\\\" /E /Y'
 		CopyFiles \\\"$INSTDIR\\\\bin\\\\Ogre*.dll\\\" \\\"$PROFILE\\\\OgitorProjects\\\\bin\\\"
 		CopyFiles \\\"$INSTDIR\\\\bin\\\\Plugin*.dll\\\" \\\"$PROFILE\\\\OgitorProjects\\\\bin\\\"
@@ -333,20 +245,20 @@ if(WIN32 AND NOT UNIX)
 		WriteRegStr HKCU \\\"Environment\\\" \\\"OGITOR_HOME\\\" $INSTDIR
 	")
 
-	set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS ${CPACK_NSIS_EXTRA_INSTALL_COMMANDS} "
-	\\\${registerExtension} \\\"Ogitor Scene File\\\" \\\".ogscene\\\" \\\"\\\$INSTDIR\\\\bin\\\\qtOgitor.exe\\\"
-	")
+    SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS ${CPACK_NSIS_EXTRA_INSTALL_COMMANDS} "
+      \\\${registerExtension} \\\"Ogitor Scene File\\\" \\\".ogscene\\\" \\\"\\\$INSTDIR\\\\bin\\\\qtOgitor.exe\\\"
+    ")
 
 	set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS ${CPACK_NSIS_EXTRA_INSTALL_COMMANDS} 'WriteRegStr HKCU \\\"Environment\\\" \\\"OGITOR_HOME\\\" $INSTDIR\\\\bin\\\"' )
 
-	set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
-	\\\${unregisterExtension} \\\".ogscene\\\" \\\"Ogitor Scene File\\\"
-	DeleteRegKey HKCU \\\"Software\\\\Ogitor_${CPACK_PACKAGE_VERSION}\\\"
-	DeleteRegKey HKCU \\\"Environment\\\\OGITOR_HOME\\\"
-	Delete \\\"$DESKTOP\\\\qtOgitor.lnk\\\"
-	")
+    SET(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
+      \\\${unregisterExtension} \\\".ogscene\\\" \\\"Ogitor Scene File\\\"
+      DeleteRegKey HKCU \\\"Software\\\\Ogitor\\\"
+      DeleteRegKey HKCU \\\"Environment\\\\OGITOR_HOME\\\"
+	  Delete \\\"$DESKTOP\\\\qtOgitor.lnk\\\"
+    ")
 
-	include(CPack)
+include(CPack)
 
 #add_custom_target(lupdate
 #   COMMAND ${PROJECT_SOURCE_DIR}/gen-qt-projectfile ${PROJECT_SOURCE_DIR} > ${PROJECT_SOURCE_DIR}/qtOgitor/languages/translate.pro
@@ -361,3 +273,5 @@ if(WIN32 AND NOT UNIX)
 #   )
 
 ENDIF(WIN32 AND NOT UNIX)
+
+

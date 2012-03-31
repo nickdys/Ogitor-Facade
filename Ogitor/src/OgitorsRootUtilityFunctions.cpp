@@ -36,7 +36,7 @@
 #include "BaseSerializer.h"
 #include "BaseEditor.h"
 #include "VisualHelper.h"
-#include "OFSSceneSerializer.h"
+#include "OgitorsSceneSerializer.h"
 #include "SceneManagerEditor.h"
 #include "ViewportEditor.h"
 #include "NodeEditor.h"
@@ -46,8 +46,6 @@
 #include "TerrainEditor.h"
 #include "AxisGizmo.h"
 #include "PGInstanceManager.h"
-
-#include "ofs.h"
 
 using namespace Ogre;
 using namespace Ogitors;
@@ -276,7 +274,7 @@ Vector3 OgitorsRoot::GetGizmoIntersectCameraPlane(Ogre::Vector3& pos, Ogre::Quat
     return vPos;
 }
 //-----------------------------------------------------------------------------------------
-void OgitorsRoot::FillResourceGroup(Ogre::ResourceGroupManager *mngr, Ogre::StringVector &list, Ogre::String path, Ogre::String group)
+void OgitorsRoot::FillResourceGroup(Ogre::ResourceGroupManager *mngr,Ogre::StringVector &list,Ogre::String path,Ogre::String group)
 {
     Ogre::String strTemp;
     unsigned int itemcount;
@@ -284,12 +282,22 @@ void OgitorsRoot::FillResourceGroup(Ogre::ResourceGroupManager *mngr, Ogre::Stri
 
     itemcount = list.size();
 
-    Ogre::String ofspath = path + "::";
-
     for(unsigned int i = 0;i < itemcount;i++)
     {
         strTemp = list[i];
-        mngr->addResourceLocation(ofspath + strTemp, "Ofs", group);
+        if(strTemp.substr(0,3) == "FS:") stype = "FileSystem";
+        else if(strTemp.substr(0,3) == "ZP:") stype = "Zip";
+        strTemp.erase(0,3);
+        if(strTemp.find(".") == 0)
+        {
+            strTemp = path + "/" + strTemp;
+            strTemp = OgitorsUtils::QualifyPath(strTemp);
+        }
+#if OGRE_PLATFORM == OGRE_PLATFORM_LINUX
+        strTemp = '/' + strTemp + '/';
+#endif
+        std::cout << "Path: " << strTemp << std::endl;
+         mngr->addResourceLocation(strTemp,stype,group);
     }
 }
 //-----------------------------------------------------------------------------------------
@@ -349,7 +357,13 @@ void OgitorsRoot::WriteProjectOptions(std::ostream &outstream, bool newproject)
     for(i = 0;i < pOpt->ResourceDirectories.size();i++)
     {
         value = pOpt->ResourceDirectories[i];
-        sprintf_s(buffer,5000,"      <DIRECTORY type=\"Ofs\" value=\"%s\"></DIRECTORY>\n", value.c_str());
+        if(value.substr(0,3) == "FS:")
+            strtype = "FileSystem";
+        else if(value.substr(0,3) == "ZP:")
+            strtype = "Zip";
+        else strtype = "Unknown";
+        value.erase(0,3);
+        sprintf_s(buffer,5000,"      <DIRECTORY type=\"%s\" value=\"%s\"></DIRECTORY>\n",strtype.c_str(),value.c_str());
         outstream << buffer;
     }
     outstream << "    </RESOURCEDIRECTORIES>\n";
@@ -385,16 +399,6 @@ void OgitorsRoot::WriteProjectOptions(std::ostream &outstream, bool newproject)
     sprintf_s(buffer,5000,"  <VOLUMESELECTIONDEPTH value=\"%s\"></VOLUMESELECTIONDEPTH>\n",Ogre::StringConverter::toString(pOpt->VolumeSelectionDepth).c_str());
     outstream << buffer;
     sprintf_s(buffer,5000,"  <OBJECTCOUNT value=\"%s\"></OBJECTCOUNT>\n",Ogre::StringConverter::toString(pOpt->ObjectCount).c_str());
-    outstream << buffer;
-    sprintf_s(buffer,5000,"  <AUTOBACKUP value=\"%s\"></AUTOBACKUP>\n",Ogre::StringConverter::toString(pOpt->AutoBackupEnabled).c_str());
-    outstream << buffer;
-    sprintf_s(buffer,5000,"  <AUTOBACKUPPERIOD value=\"%s\"></AUTOBACKUPPERIOD>\n",Ogre::StringConverter::toString(pOpt->AutoBackupPeriod).c_str());
-    outstream << buffer;
-    sprintf_s(buffer,5000,"  <AUTOBACKUPPERIODTYPE value=\"%s\"></AUTOBACKUPPERIODTYPE>\n",Ogre::StringConverter::toString(pOpt->AutoBackupPeriodType).c_str());
-    outstream << buffer;
-    sprintf_s(buffer,5000,"  <AUTOBACKUPFOLDER value=\"%s\"></AUTOBACKUPFOLDER>\n",pOpt->AutoBackupFolder.c_str());
-    outstream << buffer;
-    sprintf_s(buffer,5000,"  <AUTOBACKUPNUMBER value=\"%s\"></AUTOBACKUPNUMBER>\n",Ogre::StringConverter::toString(pOpt->AutoBackupNumber).c_str());
     outstream << buffer;
     outstream << "  </PROJECT>\n";
 }
@@ -1334,12 +1338,12 @@ void OgitorsRoot::UpdateMaterialsInScene()
 void OgitorsRoot::ReloadUserResources()
 {   
     Ogre::ResourceGroupManager *mngr = Ogre::ResourceGroupManager::getSingletonPtr();
-    mngr->clearResourceGroup(PROJECT_RESOURCE_GROUP);
-    FillResourceGroup(mngr, mProjectOptions.ResourceDirectories, mProjectOptions.ProjectDir + mProjectOptions.ProjectName + ".ofs", PROJECT_RESOURCE_GROUP);
+    mngr->clearResourceGroup("ProjectResources");
+    FillResourceGroup(mngr, mProjectOptions.ResourceDirectories, mProjectOptions.ProjectDir,"ProjectResources");
 
     try
     {
-        mngr->initialiseResourceGroup(PROJECT_RESOURCE_GROUP);
+        mngr->initialiseResourceGroup("ProjectResources");
     }
     catch(Ogre::Exception& e)
     {
@@ -1351,13 +1355,12 @@ void OgitorsRoot::ReloadUserResources()
 
     HashMap<Ogre::String, int> tmpEntityList;
 
-    Ogre::StringVectorPtr pList = Ogre::ResourceGroupManager::getSingleton().findResourceNames(PROJECT_RESOURCE_GROUP,"*.mesh",false);
+    Ogre::StringVectorPtr pList = Ogre::ResourceGroupManager::getSingleton().findResourceNames("ProjectResources","*.mesh",false);
 
     for(unsigned int i = 0;i < pList->size();i++)
     {
         Ogre::String addstr = (*pList)[i];
         addstr.erase(addstr.find(".mesh"), 5);
-
         if(tmpEntityList.find(addstr) == tmpEntityList.end())
             tmpEntityList.insert(HashMap<Ogre::String, int>::value_type(addstr, 0));
     }
@@ -1373,14 +1376,16 @@ void OgitorsRoot::ReloadUserResources()
 
     std::sort(++(mModelNames.begin()), mModelNames.end(), PropertyOption::comp_func);
 
+    Ogre::StringVector scriptnames;
+    Ogre::String scriptpath = OgitorsUtils::QualifyPath(mProjectOptions.ProjectDir + "/Scripts/*.*");
     mScriptNames.clear();
     mScriptNames.push_back(PropertyOption("",Ogre::Any(Ogre::String(""))));
+    OgitorsSystem::getSingletonPtr()->GetFileList(scriptpath, scriptnames);
 
-    OFS::FileList scriptnames = (*mProjectFile)->listFiles("/Scripts", OFS::OFS_FILE);
-    
     for(unsigned int i = 0;i < scriptnames.size();i++)
     {
-        mScriptNames.push_back(PropertyOption(scriptnames[i].name,Ogre::Any(scriptnames[i].name)));
+        Ogre::String shortname = OgitorsUtils::ExtractFileName(scriptnames[i]);
+        mScriptNames.push_back(PropertyOption(shortname,Ogre::Any(shortname)));
     }
 
     std::sort(++(mScriptNames.begin()), mScriptNames.end(), PropertyOption::comp_func);
@@ -1398,7 +1403,7 @@ void OgitorsRoot::ReloadUserResources()
     while(it.hasMoreElements())
     {
         mRes = it.getNext();
-        if(mRes->getGroup() == PROJECT_RESOURCE_GROUP)
+        if(mRes->getGroup() == "ProjectResources")
         {
             mMaterialNames.push_back(PropertyOption(mRes->getName(), Ogre::Any(mRes->getName())));
             
@@ -1452,22 +1457,19 @@ void OgitorsRoot::PrepareProjectResources()
 {
     try {
         Ogre::ResourceGroupManager *mngr = Ogre::ResourceGroupManager::getSingletonPtr();
-        mngr->createResourceGroup(PROJECT_RESOURCE_GROUP);
+        mngr->createResourceGroup("ProjectResources");
 
-        Ogre::String tempFilesDir = OgitorsUtils::QualifyPath(mProjectOptions.ProjectDir + "/Temp");
-        mSystem->MakeDirectory(tempFilesDir);
+        Ogre::String tempDir = OgitorsUtils::QualifyPath(mProjectOptions.ProjectDir + "/Temp");
+        OgitorsSystem::getSingletonPtr()->MakeDirectory(tempDir);
 
-        Ogre::String tempDir = "/Temp";
-        (*mProjectFile)->createDirectory(tempDir.c_str());
+        Ogre::String scriptDir = OgitorsUtils::QualifyPath(mProjectOptions.ProjectDir + "/Scripts");
+        OgitorsSystem::getSingletonPtr()->MakeDirectory(scriptDir);
 
-        Ogre::String scriptDir = "/Scripts";
-        (*mProjectFile)->createDirectory(scriptDir.c_str());
+        mngr->createResourceGroup("ProjectTemp");
+        mngr->addResourceLocation(tempDir, "FileSystem", "ProjectTemp");
+        mngr->initialiseResourceGroup("ProjectTemp");
 
-        mngr->createResourceGroup(PROJECT_TEMP_RESOURCE_GROUP);
-        mngr->addResourceLocation(mProjectOptions.ProjectDir + mProjectOptions.ProjectName + ".ofs::" + tempDir, "Ofs", PROJECT_TEMP_RESOURCE_GROUP);
-        mngr->initialiseResourceGroup(PROJECT_TEMP_RESOURCE_GROUP);
-
-        FillResourceGroup(mngr, mProjectOptions.ResourceDirectories, mProjectOptions.ProjectDir + mProjectOptions.ProjectName + ".ofs", PROJECT_RESOURCE_GROUP);
+        FillResourceGroup(mngr,mProjectOptions.ResourceDirectories,mProjectOptions.ProjectDir,"ProjectResources");
 
         try
         {
@@ -1478,7 +1480,7 @@ void OgitorsRoot::PrepareProjectResources()
             OgitorsSystem::getSingletonPtr()->DisplayMessageDialog(e.getFullDescription(), DLGTYPE_OK);
         }
         
-        Ogre::MaterialPtr planeMaterial = MaterialManager::getSingletonPtr()->createOrRetrieve("DefaultPlaneMaterial", PROJECT_RESOURCE_GROUP).first;
+        Ogre::MaterialPtr planeMaterial = MaterialManager::getSingletonPtr()->createOrRetrieve("DefaultPlaneMaterial", "ProjectResources").first;
         planeMaterial->getTechnique(0)->getPass(0)->setAmbient(0.4f, 0.4f, 0.4f);
         planeMaterial->getTechnique(0)->getPass(0)->setDiffuse(0.8f, 0.8f, 0.8f, 0.8f);
         planeMaterial->getTechnique(0)->getPass(0)->setSpecular(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1494,24 +1496,26 @@ void OgitorsRoot::PrepareProjectResources()
             mParticleTemplateNames.push_back(PropertyOption(psys->getName(), Ogre::Any((Ogre::String)psys->getName())));
         }
 
+        Ogre::StringVector scriptnames;
+        Ogre::String scriptpath = OgitorsUtils::QualifyPath(mProjectOptions.ProjectDir + "/Scripts/*.*");
         mScriptNames.clear();
-        mScriptNames.push_back(PropertyOption("", Ogre::Any(Ogre::String(""))));
+        mScriptNames.push_back(PropertyOption("",Ogre::Any(Ogre::String(""))));
+        mSystem->GetFileList(scriptpath, scriptnames);
 
-        OFS::FileList scriptnames = (*mProjectFile)->listFiles("/Scripts", OFS::OFS_FILE);
-        
         for(unsigned int i = 0;i < scriptnames.size();i++)
         {
-            mScriptNames.push_back(PropertyOption(scriptnames[i].name, Ogre::Any(scriptnames[i].name)));
+            Ogre::String shortname = OgitorsUtils::ExtractFileName(scriptnames[i]);
+            mScriptNames.push_back(PropertyOption(shortname,Ogre::Any(shortname)));
         }
 
         std::sort(++(mScriptNames.begin()), mScriptNames.end(), PropertyOption::comp_func);
 
         mModelNames.clear();
-        mModelNames.push_back(PropertyOption("", Ogre::Any(Ogre::String(""))));
+        mModelNames.push_back(PropertyOption("",Ogre::Any(Ogre::String(""))));
 
         HashMap<Ogre::String, int> tmpEntityList;
         
-        Ogre::StringVectorPtr pList = Ogre::ResourceGroupManager::getSingleton().findResourceNames(PROJECT_RESOURCE_GROUP, "*.mesh", false);
+        Ogre::StringVectorPtr pList = Ogre::ResourceGroupManager::getSingleton().findResourceNames("ProjectResources","*.mesh",false);
     
         for(unsigned int i = 0;i < pList->size();i++)
         {
@@ -1527,7 +1531,7 @@ void OgitorsRoot::PrepareProjectResources()
         HashMap<Ogre::String, int>::iterator eit = tmpEntityList.begin();
         while(eit != tmpEntityList.end())
         {
-            mModelNames.push_back(PropertyOption(eit->first, Ogre::Any(eit->first)));
+            mModelNames.push_back(PropertyOption(eit->first,Ogre::Any(eit->first)));
             eit++;
         }
 
@@ -1535,9 +1539,9 @@ void OgitorsRoot::PrepareProjectResources()
 
         mMaterialNames.clear();
         mTerrainPlantMaterialNames.clear();
-        mTerrainPlantMaterialNames.push_back(PropertyOption("", Ogre::Any(Ogre::String(""))));
+        mTerrainPlantMaterialNames.push_back(PropertyOption("",Ogre::Any(Ogre::String(""))));
         mSkyboxMaterials.clear();
-        mSkyboxMaterials.push_back(PropertyOption("", Ogre::Any(Ogre::String(""))));
+        mSkyboxMaterials.push_back(PropertyOption("",Ogre::Any(Ogre::String(""))));
 
         Ogre::ResourcePtr mRes;
         Ogre::ResourceManager::ResourceMapIterator it = Ogre::MaterialManager::getSingleton().getResourceIterator();
@@ -1545,7 +1549,7 @@ void OgitorsRoot::PrepareProjectResources()
         while(it.hasMoreElements())
         {
             mRes = it.getNext();
-            if(mRes->getGroup() == PROJECT_RESOURCE_GROUP)
+            if(mRes->getGroup() == "ProjectResources")
             {
                 mMaterialNames.push_back(PropertyOption(mRes->getName(), Ogre::Any(mRes->getName())));
                 
@@ -1596,54 +1600,6 @@ void OgitorsRoot::PrepareProjectResources()
 
     } catch(...) {
         Ogre::LogManager::getSingleton().getDefaultLog()->logMessage("OGITOR EXCEPTION: Can not prepare project resources!!", Ogre::LML_CRITICAL);
-    }
-}
-//-----------------------------------------------------------------------------------------
-
-bool Ogitors::ResourceLoadingListener::resourceCollision(Ogre::Resource *resource, Ogre::ResourceManager *resourceManager)
-{
-    // If there is a naming collision, remove the previously loaded resource
-    // and replace it with the one that is currently attempted to be read
-    Ogre::ResourceManager::ResourceMapIterator it = resourceManager->getResourceIterator();
-    while(it.hasMoreElements())
-    {
-        Ogre::ResourcePtr resPrt = (Ogre::ResourcePtr)it.getNext();
-        if(resPrt->getName() == resource->getName())
-        {
-            resourceManager->remove(resPrt);
-            break;
-        }
-    }
-
-    return true;
-}
-//-----------------------------------------------------------------------------------------
-typedef std::map<Ogre::Archive*, Ogre::Archive*> ArchiveMap;
-
-void OgitorsRoot::DestroyResourceGroup(const Ogre::String& resGrpName)
-{
-    ArchiveMap arcMap;
-
-    Ogre::ResourceGroupManager *resMgr = Ogre::ResourceGroupManager::getSingletonPtr();
-    
-    const Ogre::ResourceGroupManager::LocationList& list = resMgr->getResourceLocationList(resGrpName);
-
-    Ogre::ResourceGroupManager::LocationList::const_iterator it = list.begin();
-
-    while(it != list.end())
-    {
-        arcMap.insert(ArchiveMap::value_type((*it)->archive, (*it)->archive));
-        it++;
-    }
-    
-    resMgr->destroyResourceGroup(resGrpName);
-
-    ArchiveMap::iterator ait = arcMap.begin();
-
-    while(ait != arcMap.end())
-    {
-        Ogre::ArchiveManager::getSingletonPtr()->unload(ait->first);
-        ait++;
     }
 }
 //-----------------------------------------------------------------------------------------

@@ -68,11 +68,7 @@ bool BaseApplication::configure(void)
         HWND hwnd;
         mWindow->getCustomAttribute("WINDOW", (void*)&hwnd);
         LONG iconID   = (LONG)LoadIcon( GetModuleHandle(0), MAKEINTRESOURCE(IDI_ICON1) );
-#if OGRE_ARCH_TYPE == OGRE_ARCHITECTURE_64
-        SetClassLong( hwnd, GCLP_HICON, iconID );
-#else
         SetClassLong( hwnd, GCL_HICON, iconID );
-#endif
 #endif
         return true;
     }
