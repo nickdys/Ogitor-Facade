@@ -295,11 +295,6 @@ void CViewportEditor::OnMouseMove (Ogre::Vector2 point, unsigned int buttons, bo
                 }
             }
             
-//          clynamen TODO: insert shift check here, linking building   
-//             if() 
-//             if(ogRoot->getBuildingEditor()->findBuilding(multisel->getAsSingle()->getName())) {
-//                 static_cast<CBuildingEditor*>(multisel->getAsSingle())->setDerivedPositionAndLinkBuilding(vNewPos)
-//             }
             multisel->getAsSingle()->setDerivedPosition(vNewPos);
                 
             
@@ -763,13 +758,6 @@ CBaseEditor* CViewportEditor::GetObjectUnderMouse(Ogre::Ray &mouseRay, bool pick
     {
         if(OgitorsUtils::PickEntity(mouseRay,&result,hitlocation)&&result->getName() != "HydraxMeshEnt")    
         {
-            // TODO: CLynamen check here if object is building?
-            // if(OgitorRoot->getBuildingEditor->isBuilding(result))
-//                 {
-//                     selected = building;
-//                     OgitorRoot->getBuildingEditor->ShowBuildingView();
-//                 }
-            
             Ogre::String sName = result->getName();
             selected = mOgitorsRoot->FindObject(sName);
         }

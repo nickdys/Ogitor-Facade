@@ -246,7 +246,6 @@ int COFSSceneSerializer::Import(Ogre::String importfile)
         }
 
         objecttype = Ogre::any_cast<Ogre::String>(params["typename"].val);
-        //clynamen TODO:
         CBaseEditor *result = ogRoot->CreateEditorObject(0, objecttype, params, false, false);
         if(result)
         {

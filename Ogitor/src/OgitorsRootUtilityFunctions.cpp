@@ -998,14 +998,6 @@ void OgitorsRoot::OnMouseLeftDown (Ogre::Vector2 point, unsigned int buttons)
             mMouseListener->OnMouseLeftDown(mActiveViewport, point - Ogre::Vector2(rect.x,rect.y), buttons);
         else 
             mActiveViewport->OnMouseLeftDown(point - Ogre::Vector2(rect.x,rect.y), buttons);
-        //TODO: clynamen 
-//         if(mMouseListener)
-//             mMouseListener->OnMouseLeftDown(mActiveViewport, point - Ogre::Vector2(rect.x,rect.y), buttons);
-//         else if(mBuildingEditor->isBuilding()) {
-                // pass control to buildingEditor
-//             } else {
-//                  mActiveViewport->OnMouseLeftDown(point - Ogre::Vector2(rect.x,rect.y), buttons);
-//             }
     }
 }
 //-----------------------------------------------------------------------------------------

@@ -585,7 +585,7 @@ CBaseEditor *CBuildingEditorFactory::CreateObject(CBaseEditor **parent, OgitorsP
     building->createProperties(params);
     building->mParentEditor->init(*parent);
     
-    //TODO: clynamen
+    //TODO: 
 //     building->mRenderingDistance->connectTo(OgitorsRoot::getSingletonPtr()->GetSceneManagerEditor()->getProperties()->getProperty("renderingdistance"));
     
     mInstanceCount++;
