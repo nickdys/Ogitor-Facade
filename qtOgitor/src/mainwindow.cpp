@@ -45,6 +45,7 @@
 #include "propertiesviewgeneral.hxx"
 #include "propertiesviewcustom.hxx"
 #include "entityview.hxx"
+#include "buildingsview.hxx"
 #include "objectsview.hxx"
 #include "templateview.hxx"
 #include "colourpicker.hxx"
@@ -578,13 +579,16 @@ void MainWindow::addDockWidgets(QMainWindow* parent)
 
     mObjectsViewWidget = new ObjectsViewWidget(parent);
     mEntityViewWidget = new EntityViewWidget(parent);
-    mEntityViewWidget->setObjectName(QString::fromUtf8("entityViewWidget"));
+    mEntityViewWidget->setObjectName(QString::fromUtf8("entityViewWidget")); 
+    mBuildingViewWidget = new BuildingsViewWidget(parent);
+    mBuildingViewWidget->setObjectName(QString::fromUtf8("buildingsViewWidget"));
     mTemplatesViewWidget = new TemplateViewWidget(parent);
     mProjectFilesViewWidget = new ProjectFilesViewWidget(parent);
 
     mResourcesToolBox = new QToolBox(parent);
     mResourcesToolBox->addItem(mObjectsViewWidget, QIcon(":/icons/objects.svg"), tr("Objects"));
     mResourcesToolBox->addItem(mEntityViewWidget, QIcon(":/icons/entity.svg"), tr("Meshes"));
+    mResourcesToolBox->addItem(mBuildingViewWidget, QIcon(":/icons/entity.svg"), tr("Buildings"));
     mResourcesToolBox->addItem(mTemplatesViewWidget, QIcon(":/icons/template.svg"), tr("Templates"));
 
     resourcesDockWidget = new QDockWidget(parent);

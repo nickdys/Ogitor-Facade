@@ -50,6 +50,7 @@
 #include "NodeEditor.h"
 #include "EntityEditor.h"
 #include "LightEditor.h"
+#include "BuildingEditor.h"
 #include "CameraEditor.h"
 #include "MarkerEditor.h"
 #include "PlaneEditor.h"

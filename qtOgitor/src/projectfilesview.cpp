@@ -35,6 +35,7 @@
 #include "mainwindow.hxx"
 #include "generictexteditor.hxx"
 #include "entityview.hxx"
+#include "buildingsview.hxx"
 #include "templateview.hxx"
 #include "genericimageeditor.hxx"
 
@@ -484,6 +485,7 @@ void ProjectFilesViewWidget::onCommandMakeAsset()
     Ogitors::OgitorsRoot::getSingletonPtr()->GetProjectOptions()->ResourceDirectories.push_back(name.toStdString());
     Ogitors::OgitorsRoot::getSingletonPtr()->ReloadUserResources();
     mOgitorMainWindow->getEntityViewWidget()->prepareView();
+    mOgitorMainWindow->getBuildingViewWidget()->prepareView();
     mOgitorMainWindow->getTemplatesViewWidget()->prepareView();
 
     // Send event so that all listening plugins get notified as well and can update their views

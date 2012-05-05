@@ -247,6 +247,8 @@ void CViewportEditor::OnMouseMove (Ogre::Vector2 point, unsigned int buttons, bo
     {
         if((CURRENT_EDITOR_TOOL == TOOL_MOVE) && multisel->getAsSingle()->supports(CAN_MOVE))
         {
+            //TODO: don't move just one building, move the entire set
+            
             if(mEditorToolEx == TOOL_EX_CLONE) 
             {
                 CloneMove(false);
@@ -293,7 +295,13 @@ void CViewportEditor::OnMouseMove (Ogre::Vector2 point, unsigned int buttons, bo
                 }
             }
             
+//          clynamen TODO: insert shift check here, linking building   
+//             if() 
+//             if(ogRoot->getBuildingEditor()->findBuilding(multisel->getAsSingle()->getName())) {
+//                 static_cast<CBuildingEditor*>(multisel->getAsSingle())->setDerivedPositionAndLinkBuilding(vNewPos)
+//             }
             multisel->getAsSingle()->setDerivedPosition(vNewPos);
+                
             
             if(mFirstTimeTranslation)
             {
@@ -321,7 +329,8 @@ void CViewportEditor::OnMouseMove (Ogre::Vector2 point, unsigned int buttons, bo
                 if(mEditorAxis & AXIS_Y) vScale.y *= (fNewDist / fLength);
                 if(mEditorAxis & AXIS_Z) vScale.z *= (fNewDist / fLength);
             }
-            multisel->getAsSingle()->getProperties()->setValue("scale",vScale);
+//             multisel->getAsSingle()->getProperties()->setValue("scale",vScale);
+            multisel->getAsSingle()->setDerivedScale(vScale);
 
             if(mFirstTimeTranslation)
             {
@@ -754,6 +763,13 @@ CBaseEditor* CViewportEditor::GetObjectUnderMouse(Ogre::Ray &mouseRay, bool pick
     {
         if(OgitorsUtils::PickEntity(mouseRay,&result,hitlocation)&&result->getName() != "HydraxMeshEnt")    
         {
+            // TODO: CLynamen check here if object is building?
+            // if(OgitorRoot->getBuildingEditor->isBuilding(result))
+//                 {
+//                     selected = building;
+//                     OgitorRoot->getBuildingEditor->ShowBuildingView();
+//                 }
+            
             Ogre::String sName = result->getName();
             selected = mOgitorsRoot->FindObject(sName);
         }

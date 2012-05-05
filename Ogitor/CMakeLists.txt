@@ -52,6 +52,8 @@ set(Ogitor_hdrs
 	./include/PGInstanceEditor.h
 	./include/Selection2D.h
 	./include/TerrainGroupEditor.h
+        ./include/BuildingEditor.h
+#         ./include/Building.h
 	./include/TerrainGroupUndo.h
 	./include/TerrainMaterialGeneratorB.h
 	./include/TerrainMaterialGeneratorC.h
@@ -103,7 +105,9 @@ set(Ogitor_srcs
 	./src/OgitorsUtils.cpp
 	./src/OgitorsPaging.cpp
 	./src/OgitorsPagedWorldSection.cpp
-	./src/TerrainGroupEditor.cpp
+	./src/BuildingEditor.cpp
+#         ./src/Building.cpp
+        ./src/TerrainGroupEditor.cpp
 	./src/TerrainGroupEditorEditing.cpp
 	./src/TerrainGroupEditorUpdate.cpp
 	./src/TerrainGroupEditorImportExport.cpp

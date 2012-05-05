@@ -50,6 +50,7 @@ namespace Ogitors
     class CBaseEditor;
     class CCameraEditor;
     class CEntityEditor;
+    class CBuildingEditor;
     class CLightEditor;
     class CMarkerEditor;
     class CMultiSelEditor;
@@ -73,6 +74,7 @@ namespace Ogitors
     class CBaseSerializer;
     class COgitorsSceneSerializer;
     class ITerrainEditor;
+    class CBuildingEditorFactory;
     class IPagingEditor;
     class DragDropHandler;
     class OgitorsUndoBase;

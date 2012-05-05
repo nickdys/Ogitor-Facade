@@ -39,12 +39,14 @@
 
 //-----------------------------------------------------------------------------------------
 
+class BuildingsViewWidget;
 class OgreWidget;
 class SceneViewWidget;
 class LayerViewWidget;
 class GeneralPropertiesViewWidget;
 class CustomPropertiesViewWidget;
 class EntityViewWidget;
+class BuildingsViewWidget;
 class TemplateViewWidget;
 class ColourPickerWidget;
 class ObjectsViewWidget;
@@ -240,6 +242,7 @@ public:
     void writeSettings(QString filename = "");
 
     EntityViewWidget                *getEntityViewWidget() {return mEntityViewWidget;};
+    BuildingsViewWidget             *getBuildingViewWidget() {return mBuildingViewWidget;};
     ObjectsViewWidget               *getObjectsViewWidget() {return mObjectsViewWidget;};
     TemplateViewWidget              *getTemplatesViewWidget() {return mTemplatesViewWidget;};
     LayerViewWidget                 *getLayersViewWidget() {return mLayerViewWidget;};
@@ -338,6 +341,7 @@ private:
     GeneralPropertiesViewWidget     *mGeneralPropertiesViewWidget;
     CustomPropertiesViewWidget      *mCustomPropertiesViewWidget;
     EntityViewWidget                *mEntityViewWidget;
+    BuildingsViewWidget              *mBuildingViewWidget;
     ObjectsViewWidget               *mObjectsViewWidget;
     TemplateViewWidget              *mTemplatesViewWidget;
     ProjectFilesViewWidget          *mProjectFilesViewWidget;

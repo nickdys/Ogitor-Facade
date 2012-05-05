@@ -33,6 +33,9 @@
 #pragma once
 
 #include "OgitorsSingleton.h"
+// #include "BuildingEditor.h"
+
+// class CBuildingEditorFactory;
 
 namespace OFS
 {
@@ -660,6 +663,12 @@ namespace Ogitors
         * @return terrain editor
         */
         inline ITerrainEditor *             GetTerrainEditor() {return mTerrainEditor;};
+        /** 
+        * Fetches building editor
+        * @return building editor
+        */
+//         inline CBaseEditorFactory*      GetBuildingEditor() {return mBuildingEditor;};
+        inline CBuildingEditorFactory*      GetBuildingEditor() {return mBuildingEditor;};
         /**
         * Fetches terrain editor object (actual terrain)
         * @return terrain editor object (actual terrain)
@@ -1078,6 +1087,7 @@ namespace Ogitors
         UTFStringVector     mRecentFiles;                               /** List of recently opened files */
         Ogre::Vector3       mLastTranslationDelta;                      /** Last object translation change (used with gizmos) */
         ITerrainEditor     *mTerrainEditor;                             /** Terrain editor handle */
+        CBuildingEditorFactory     *mBuildingEditor;                    
         IPagingEditor      *mPagingEditor;                              /** Paging editor handle */
         CBaseEditor        *mTerrainEditorObject;                       /** Terrain editor object handle (actual terrain object) */
         CBaseEditor        *mPagingEditorObject;                        /** Terrain editor object handle (actual terrain object) */

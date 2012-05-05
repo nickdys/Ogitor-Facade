@@ -56,6 +56,8 @@ else(NOT QT4_FOUND)
         ./src/magickwidget.cpp
         ./include/objectsview.hxx
         ./src/objectsview.cpp
+				./include/buildingsview.hxx
+				./src/buildingsview.cpp
         ./include/ofstreewidget.hxx
         ./src/ofstreewidget.cpp
         ./include/ogitorpreferenceswidget.hxx
@@ -112,6 +114,7 @@ else(NOT QT4_FOUND)
         ./include/mainwindow.hxx
         ./include/magickwidget.hxx
         ./include/objectsview.hxx
+				./include/buildingsview.hxx
         ./include/ofstreewidget.hxx
         ./include/ogitorpreferenceswidget.hxx
         ./include/ogrewidget.hxx

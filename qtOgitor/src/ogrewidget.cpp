@@ -32,6 +32,7 @@
 #include "mainwindow.hxx"
 #include "ogrewidget.hxx"
 #include "entityview.hxx"
+#include "buildingsview.hxx"
 #include "layerview.hxx"
 #include "objectsview.hxx"
 #include "templateview.hxx"
@@ -643,6 +644,7 @@ void OgreWidget::onSceneLoadStateChange(Ogitors::IEvent* evt)
 
             mOgitorMainWindow->getObjectsViewWidget()->prepareView();
             mOgitorMainWindow->getEntityViewWidget()->prepareView();
+            mOgitorMainWindow->getBuildingViewWidget()->prepareView();
             mOgitorMainWindow->getTemplatesViewWidget()->prepareView();
             mOgitorMainWindow->getProjectFilesViewWidget()->prepareView();
             mOgitorMainWindow->toggleGrid();

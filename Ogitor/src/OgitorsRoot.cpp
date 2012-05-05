@@ -54,6 +54,7 @@
 #include "TerrainEditor.h"
 #include "TerrainPageEditor.h"
 #include "TerrainGroupEditor.h"
+#include "BuildingEditor.h"
 #include "PagingEditor.h"
 #include "EditableMeshEditor.h"
 #include "OgitorsPaging.h"
@@ -128,7 +129,7 @@ OgitorsPropertySetListener* OgitorsRoot::GetGlobalPropertyListener()
 OgitorsRoot::OgitorsRoot(Ogre::StringVector* pDisabledPluginPaths) :
 mUndoManager(0), mClipboardManager(0), mSceneManager(0), mSceneManagerEditor(0), mRenderWindow(0), mActiveViewport(0),
 mRootEditor(0), mMultiSelection(0), mLastTranslationDelta(Vector3::ZERO),
-mTerrainEditor(0), mTerrainEditorObject(0), mPagingEditor(0), mPagingEditorObject(0), mIsSceneModified(false),
+mTerrainEditor(0), mBuildingEditor(0), mTerrainEditorObject(0), mPagingEditor(0), mPagingEditorObject(0), mIsSceneModified(false),
 mGlobalLightVisiblity(true), mGlobalCameraVisiblity(true), mSelRect(0), mSelectionNode(0),
 mMouseListener(0), mKeyboardListener(0),
 mGizmoScale(1.0f), mGizmoNode(0), mGizmoX(0), mGizmoY(0), mGizmoZ(0), mWorldSpaceGizmoOrientation(false),
@@ -269,6 +270,7 @@ void OgitorsRoot::ClearEditors()
 
     mTerrainEditor = 0;
     mTerrainEditorObject = 0;
+    mBuildingEditor = 0;
     mPagingEditor = 0;
     mPagingEditorObject = 0;
     mActiveDragSource = 0;
@@ -494,9 +496,13 @@ unsigned int OgitorsRoot::GetTypeID(const Ogre::String& typeName)
 int EditorObjectTypeIDCounter = 0;
 void OgitorsRoot::RegisterAllEditorObjects(Ogre::StringVector* pDisabledPluginPaths)
 {
+    
     EditorObjectTypeIDCounter = 0;
+    
+    mBuildingEditor = OGRE_NEW CBuildingEditorFactory();
 
     _RegisterEditorFactory(OGRE_NEW CBaseEditorFactory());
+    _RegisterEditorFactory(mBuildingEditor);
     _RegisterEditorFactory(OGRE_NEW CSceneManagerEditorFactory());
     _RegisterEditorFactory(OGRE_NEW CViewportEditorFactory());
     _RegisterEditorFactory(OGRE_NEW CFolderEditorFactory());

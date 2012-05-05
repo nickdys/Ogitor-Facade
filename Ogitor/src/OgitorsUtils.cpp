@@ -556,6 +556,7 @@ void OgitorsUtils::GetMeshDataEx(const Ogre::Entity *entity, size_t &vertex_coun
 //-----------------------------------------------------------------------------------------
 bool OgitorsUtils::PickEntity(Ogre::Ray &ray, Ogre::Entity **result, Ogre::Vector3 &hitpoint, const Ogre::String& excludeobject, Ogre::Real max_distance)
 {
+    // TODO: use this method
     Ogre::RaySceneQuery *mRaySceneQuery = OgitorsRoot::getSingletonPtr()->GetSceneManagerEditor()->getRayQuery();
     mRaySceneQuery->setRay(ray);
     mRaySceneQuery->setQueryMask(QUERYFLAG_MOVABLE);

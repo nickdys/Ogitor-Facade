@@ -47,6 +47,7 @@
 #include "propertiesviewgeneral.hxx"
 #include "propertiesviewcustom.hxx"
 #include "entityview.hxx"
+#include "buildingsview.hxx"
 #include "objectsview.hxx"
 #include "templateview.hxx"
 #include "settingsdialog.hxx"
@@ -1225,6 +1226,7 @@ void MainWindow::openSceneOptions()
         {
             Ogitors::OgitorsRoot::getSingletonPtr()->ReloadUserResources();
             mEntityViewWidget->prepareView();
+            mBuildingViewWidget->prepareView();
             mTerrainToolsWidget->updateTools();
         }
     }
