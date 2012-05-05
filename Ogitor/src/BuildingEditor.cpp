@@ -277,11 +277,9 @@ void CBuildingEditor::setDerivedScale(Ogre::Vector3 val) {
     CBaseEditor::setDerivedScale(val);
     if(isLinked()) {
         if(mLeft) {
-            std::cout << "updating left " << std::endl ;
             mLeft->updateGeometry();
         }
         if(mRight) {
-            std::cout << "updating right " << std::endl ;
             mRight->updateGeometry();
         }
     } 
@@ -358,23 +356,27 @@ bool CBuildingEditor::addBuilding(CBuildingEditor* building_to_add, Ogre::Vector
         return false;
     }
     
-    //create another building
-    OgitorsPropertyValueMap params;
-    OgitorsPropertyValue pvalue;
-    params["init"] = EMPTY_PROPERTY_VALUE;
-    pvalue.propType = PROP_STRING;
-    pvalue.val = mProperties.getProperty("meshfile")->getValue();
-    params["meshfile"] = pvalue;
-    pvalue.propType = PROP_VECTOR3;
-    pvalue.val = mProperties.getProperty("position")->getValue();
-    params["position"] = pvalue;
-    pvalue.propType = PROP_QUATERNION;
-    pvalue.val = mProperties.getProperty("orientation")->getValue();
-    params["orientation"] = pvalue;
+    CBuildingEditor* another;
     
-    
-    CBaseEditor *parent = OgitorsRoot::getSingletonPtr()->GetSceneManagerEditor();
-    CBuildingEditor* another = static_cast<CBuildingEditor*>(OgitorsRoot::getSingletonPtr()->CreateEditorObject(0, "Building Object", params, true, true));
+    {
+        //create another building
+        OgitorsPropertyValueMap params;
+        OgitorsPropertyValue pvalue;
+        params["init"] = EMPTY_PROPERTY_VALUE;
+        pvalue.propType = PROP_STRING;
+        pvalue.val = mProperties.getProperty("meshfile")->getValue();
+        params["meshfile"] = pvalue;
+        pvalue.propType = PROP_VECTOR3;
+        pvalue.val = mProperties.getProperty("position")->getValue();
+        params["position"] = pvalue;
+        pvalue.propType = PROP_QUATERNION;
+        pvalue.val = mProperties.getProperty("orientation")->getValue();
+        params["orientation"] = pvalue;
+        
+        
+        CBaseEditor *parent = OgitorsRoot::getSingletonPtr()->GetSceneManagerEditor();
+        another = static_cast<CBuildingEditor*>(OgitorsRoot::getSingletonPtr()->CreateEditorObject(0, "Building Object", params, true, true));
+    }
     
     {
         CBuildingEditor* old_right = mRight;   
@@ -385,13 +387,17 @@ bool CBuildingEditor::addBuilding(CBuildingEditor* building_to_add, Ogre::Vector
         }
     }
     
+    
     Ogre::Vector3 left_extremity = (getOBB().fbl + getOBB().bbl) / 2;
     Ogre::Vector3 right_extremity = (getOBB().fbr + getOBB().bbr) / 2;
-    float sideways_space = old_building_width - building_to_add->getWidth();
-    float left_side_width = sideways_space / 2;
     
-    setWidth(left_side_width);
-    another->mProperties.setValue("scale", mScale->get());
+    {
+        float sideways_space = old_building_width - building_to_add->getWidth();
+        float left_side_width = sideways_space / 2;
+        
+        setWidth(left_side_width);
+        another->mProperties.setValue("scale", mScale->get());
+    }
     
     Ogre::Vector3 center = (left_extremity + right_extremity) / 2;
     
@@ -487,7 +493,6 @@ void CBuildingEditor::updateGeometry() {
     Ogre::Vector3 center = (mLeftExtremity + mRightExtremity) / 2;
     mProperties.setValue("position", center);
 
-    
     }
 }
 void     CBuildingEditor::setSelectedImpl(bool bSelected) {
@@ -584,9 +589,7 @@ CBaseEditor *CBuildingEditorFactory::CreateObject(CBaseEditor **parent, OgitorsP
 
     building->createProperties(params);
     building->mParentEditor->init(*parent);
-    
-    //TODO: 
-//     building->mRenderingDistance->connectTo(OgitorsRoot::getSingletonPtr()->GetSceneManagerEditor()->getProperties()->getProperty("renderingdistance"));
+    building->mRenderingDistance->connectTo(OgitorsRoot::getSingletonPtr()->GetSceneManagerEditor()->getProperties()->getProperty("renderingdistance"));
     
     mInstanceCount++;
     return building;
@@ -612,7 +615,7 @@ CBuildingEditor* CBuildingEditorFactory::findNearestBuilding(const Ogre::Vector3
         if(radius >= distance) {
             if(distance < nearest_distance) {
                 nearest_distance = distance;
-                ret = (*i);
+                ret = *i;
             }
         }
     }
@@ -629,7 +632,7 @@ CBuildingEditor* CBuildingEditorFactory::findNearestBuilding(CBuildingEditor* bu
         if(radius >= distance) {
             if(distance < nearest_distance && building != *i) {
                 nearest_distance = distance;
-                ret = (*i);
+                ret = *i;
             }
         }
     }
